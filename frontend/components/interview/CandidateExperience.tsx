@@ -68,11 +68,17 @@ function Onboarding({ state, dispatch }: { state: InterviewState; dispatch: Reac
         <StepLabel>Your interview is ready</StepLabel>
         <h1>Hi Maya, meet Sage.</h1>
         <p className="welcome-lede">This is your opportunity to bring the work behind your application to life. Sage will help you share the decisions, context, and impact that a resume cannot capture in 15 to 20 minutes.</p>
-        <div className="welcome-facts">
-          <div><span>01</span><p><strong>Your chance to add context</strong>Share the decisions, collaboration, and learning behind the outcome.</p></div>
-          <div><span>02</span><p><strong>Grounded in your application</strong>Sage starts from your experience, so you can focus on what you know best.</p></div>
-          <div><span>03</span><p><strong>You stay in control</strong>Your camera is a private preview only. It is never recorded, sent, or analyzed.</p></div>
-        </div>
+        <section className="conversation-roadmap" aria-labelledby="conversation-roadmap-title">
+          <div className="roadmap-heading"><div><span>Conversation preview</span><h2 id="conversation-roadmap-title">What Sage may explore</h2></div><p>There are no surprise topics. Sage may ask a short adaptive follow-up when your answer opens a useful thread.</p></div>
+          <ol>
+            <li><span>01</span><p><strong>Your story</strong>Who you are and what motivates you</p></li>
+            <li><span>02</span><p><strong>Relevant work</strong>Experience and projects connected to this role</p></li>
+            <li><span>03</span><p><strong>Your contribution</strong>What you personally owned</p></li>
+            <li><span>04</span><p><strong>Outcomes</strong>Measured results and impact</p></li>
+            <li><span>05</span><p><strong>Your judgment</strong>Decisions, trade-offs, and lessons</p></li>
+            <li><span>06</span><p><strong>Anything else</strong>A final chance to add helpful context</p></li>
+          </ol>
+        </section>
       </section>
       <aside className="welcome-side">
         <div className="sage-intro-card">

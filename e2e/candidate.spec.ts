@@ -4,6 +4,11 @@ async function enterDemoInterview(page: Page) {
   await page.goto("/candidate");
   await expect(page.getByRole("heading", { name: "Hi Maya, meet Sage." })).toBeVisible();
   await expect(page.getByText(/This is your opportunity to bring the work behind your application to life/)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "What Sage may explore" })).toBeVisible();
+  for (const area of ["Your story", "Relevant work", "Your contribution", "Outcomes", "Your judgment", "Anything else"]) {
+    await expect(page.getByText(area, { exact: true })).toBeVisible();
+  }
+  await expect(page.getByText(/adaptive follow-up when your answer opens a useful thread/)).toBeVisible();
   await page.getByRole("checkbox").check();
   await page.getByRole("button", { name: "Set up microphone and camera" }).click();
   await page.getByRole("button", { name: "Use demo devices" }).click();

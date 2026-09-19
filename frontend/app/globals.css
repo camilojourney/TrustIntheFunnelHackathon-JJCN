@@ -375,11 +375,16 @@ h1, h2, h3 { text-wrap: balance; }
 .welcome-person small { align-self: center; color: var(--ink-muted); font-size: 10px; }
 .welcome-copy h1 { margin: 0 0 24px; font: 500 clamp(62px, 8vw, 105px)/.9 var(--serif); letter-spacing: -.055em; }
 .welcome-lede { max-width: 690px; color: var(--ink-muted); font-size: clamp(18px, 1.8vw, 23px); line-height: 1.55; }
-.welcome-facts { margin-top: 48px; border-top: 1px solid var(--line); }
-.welcome-facts > div { display: grid; grid-template-columns: 38px 1fr; gap: 14px; padding: 17px 0; border-bottom: 1px solid var(--line); }
-.welcome-facts > div > span { color: var(--rust); font: 500 13px var(--serif); }
-.welcome-facts p { margin: 0; color: var(--ink-muted); font-size: 11px; }
-.welcome-facts strong { display: block; margin-bottom: 2px; color: var(--ink); font-size: 13px; }
+.conversation-roadmap { margin-top: 42px; padding-top: 21px; border-top: 1px solid var(--line); }
+.roadmap-heading { display: grid; grid-template-columns: 1fr 1.1fr; gap: 26px; align-items: end; margin-bottom: 16px; }
+.roadmap-heading span { color: var(--rust); font-size: 8px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.roadmap-heading h2 { margin: 3px 0 0; font: 500 25px var(--serif); }
+.roadmap-heading > p { margin: 0; color: var(--ink-muted); font-size: 9px; line-height: 1.5; }
+.conversation-roadmap ol { display: grid; grid-template-columns: 1fr 1fr; gap: 0 28px; margin: 0; padding: 0; list-style: none; border-bottom: 1px solid var(--line); }
+.conversation-roadmap li { display: grid; grid-template-columns: 28px 1fr; gap: 8px; min-height: 66px; padding: 13px 0; border-top: 1px solid var(--line); }
+.conversation-roadmap li > span { color: var(--rust); font: 500 11px var(--serif); }
+.conversation-roadmap li p { margin: 0; color: var(--ink-muted); font-size: 9px; line-height: 1.4; }
+.conversation-roadmap li strong { display: block; margin-bottom: 2px; color: var(--ink); font-size: 11px; }
 .welcome-side { border: 1px solid #cec9bd; background: var(--paper-light); box-shadow: var(--shadow); }
 .sage-intro-card { display: flex; align-items: center; gap: 22px; padding: 28px; background: #21342c; color: white; }
 .sage-intro-card > div:last-child > span { color: #bdcfc4; font-size: 8px; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
