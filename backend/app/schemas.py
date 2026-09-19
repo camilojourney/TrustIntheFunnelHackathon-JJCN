@@ -26,6 +26,7 @@ class InterviewAnswer(BaseModel):
     id: str
     question_id: str
     transcript: str
+    original_transcript: str | None = None
     audio_url: str | None = None
     created_at: str
 
@@ -56,6 +57,7 @@ class ClaimAssessment(BaseModel):
 
 
 class CandidateReport(BaseModel):
+    session_id: str | None = None
     candidate_id: str
     role_title: str
     claims: list[Claim]

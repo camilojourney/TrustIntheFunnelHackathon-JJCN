@@ -3,7 +3,7 @@ import fixture from "@fixtures/report.json";
 
 export type ReportSource = "api" | "fixture";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
+const API_BASE = process.env.API_BASE || process.env.NEXT_PUBLIC_API_BASE || "http://127.0.0.1:8000";
 const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
 export const demoReport = fixture as CandidateReport;

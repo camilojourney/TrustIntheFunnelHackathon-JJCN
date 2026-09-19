@@ -1,13 +1,14 @@
 import uuid
 from typing import Literal
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app import schemas
 from app.db import get_db
-from app.models import EvidenceModel
+from app.models import EvidenceModel, ClaimModel
+from app.services.tracing import record_event
 
 router = APIRouter()
 
@@ -40,6 +41,9 @@ def _evidence_to_schema(row: EvidenceModel) -> schemas.EvidenceItem:
 def add_evidence(
     claim_id: str, payload: EvidenceCreateRequest, db: Session = Depends(get_db)
 ) -> schemas.EvidenceItem:
+    claim = db.get(ClaimModel, claim_id)
+    if claim is None:
+        raise HTTPException(status_code=404, detail="Claim not found")
     limitations = payload.limitations.strip()
     if payload.type == "external_artifact" and _ARTIFACT_DISCLAIMER not in limitations.lower():
         limitations = (
@@ -60,6 +64,7 @@ def add_evidence(
     )
     db.add(row)
     db.commit()
+    record_event(db, "evidence_attached", claim.candidate_id, claim_id=claim_id, evidence_id=row.id)
     return _evidence_to_schema(row)
 
 

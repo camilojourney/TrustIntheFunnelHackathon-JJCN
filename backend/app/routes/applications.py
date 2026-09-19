@@ -11,6 +11,7 @@ from app.db import get_db
 from app.llm.client import LLMOutputError, get_llm_client
 from app.models import ApplicationModel, CandidateModel, ClaimModel
 from app.services.seed import FIXTURES_DIR, reset_demo_state
+from app.services.tracing import record_event
 
 router = APIRouter()
 
@@ -75,6 +76,7 @@ def create_application(
                 )
             )
         db.commit()
+        record_event(db, "application_created", candidate_id, application_id=application_id, mode="seed")
         return schemas.ApplicationCreateResponse(
             candidate_id=candidate_id, application_id=application_id
         )
@@ -138,6 +140,7 @@ def extract_claims(application_id: str, db: Session = Depends(get_db)) -> list[s
             )
         )
     db.commit()
+    record_event(db, "claim_extraction", candidate_id, claim_ids=[c.id for c in claims])
     return claims
 
 
@@ -159,4 +162,3 @@ def find_claim(candidate_id: str, claim_id: str, db: Session) -> schemas.Claim |
 def find_role_title(candidate_id: str, db: Session) -> str:
     candidate = db.get(CandidateModel, candidate_id)
     return candidate.role_title if candidate else ""
-

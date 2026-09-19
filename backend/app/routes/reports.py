@@ -10,6 +10,8 @@ from app.llm.client import LLMOutputError, get_llm_client
 from app.models import AnswerModel, AssessmentModel, InterviewModel, QuestionModel
 from app.routes.applications import find_claim, find_role_title
 from app.routes.evidence import get_evidence_for_claim
+from app.services.tracing import record_event, session_context
+from app.models import TraceEventModel
 
 router = APIRouter()
 
@@ -51,6 +53,7 @@ def _questions_and_answers_for_claim(
             id=a.id,
             question_id=a.question_id,
             transcript=a.transcript,
+            original_transcript=(a.grounding or {}).get("original_transcript"),
             audio_url=a.audio_url,
             created_at=a.created_at,
         )
@@ -176,6 +179,9 @@ def complete_interview(interview_id: str, db: Session = Depends(get_db)) -> sche
 
     candidate_id = interview.candidate_id
 
+    if interview.current_index < len(interview.claim_ids):
+        raise HTTPException(status_code=409, detail="Finish the interview before generating a report")
+
     all_claims: list[schemas.Claim] = []
     all_questions: list[schemas.InterviewQuestion] = []
     all_answers: list[schemas.InterviewAnswer] = []
@@ -214,9 +220,13 @@ def complete_interview(interview_id: str, db: Session = Depends(get_db)) -> sche
 
     db.commit()
 
+    record_event(db, "assessment_generation", candidate_id, interview_id,
+                 claim_ids=[a.claim_id for a in assessments])
+
     role_title = find_role_title(candidate_id, db)
 
     return schemas.CandidateReport(
+        session_id=session_context.get() or interview_id,
         candidate_id=candidate_id,
         role_title=role_title,
         claims=all_claims,
@@ -229,6 +239,7 @@ def complete_interview(interview_id: str, db: Session = Depends(get_db)) -> sche
 
 @router.get("/api/candidates/{candidate_id}/report", response_model=schemas.CandidateReport)
 def get_report(candidate_id: str, db: Session = Depends(get_db)) -> schemas.CandidateReport:
+    last_trace = db.query(TraceEventModel).filter_by(candidate_id=candidate_id, stage="assessment_generation").order_by(TraceEventModel.created_at.desc()).first()
     assessment_rows = (
         db.query(AssessmentModel)
         .join(InterviewModel, AssessmentModel.interview_id == InterviewModel.id)
@@ -269,6 +280,7 @@ def get_report(candidate_id: str, db: Session = Depends(get_db)) -> schemas.Cand
     role_title = find_role_title(candidate_id, db)
 
     return schemas.CandidateReport(
+        session_id=last_trace.session_id if last_trace else None,
         candidate_id=candidate_id,
         role_title=role_title,
         claims=all_claims,
@@ -277,4 +289,3 @@ def get_report(candidate_id: str, db: Session = Depends(get_db)) -> schemas.Cand
         evidence=all_evidence,
         assessments=assessments,
     )
-

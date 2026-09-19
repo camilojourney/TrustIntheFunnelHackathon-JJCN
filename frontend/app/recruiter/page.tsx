@@ -7,7 +7,7 @@ import { STATUSES, STATUS_META } from "@/lib/status";
 export const dynamic = "force-dynamic";
 
 // One demo candidate. Add ids here when the backend lists more.
-const QUEUE = [{ id: "demo", name: "Demo candidate" }];
+const QUEUE = [{ id: "demo-candidate-1", name: "Demo candidate" }];
 
 export default async function RecruiterQueue() {
   const rows = await Promise.all(

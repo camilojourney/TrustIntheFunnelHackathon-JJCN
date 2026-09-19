@@ -1,6 +1,6 @@
 # Recruiter UI (Person 3) — handoff
 
-Branch: `feat/recruiter-ui`. Owner until 2:00 pm Sep 19: Jacob. After that, any teammate can take it.
+Original branch: `feat/recruiter-ui`. Integrated with backend and candidate flow on `fea/dotbion`; see `docs/person4-integration.md` for the current end-to-end setup.
 
 ## Run
 
@@ -49,7 +49,7 @@ The page calls `GET {API_BASE}/api/candidates/{id}/report`. On any error, a time
 ## Not done
 
 - More than one candidate. Add ids to `QUEUE` in `frontend/app/recruiter/page.tsx`.
-- Link to Person 4's trace view.
+- Live sponsor observability. The report now links to Person 4's local execution trace via `session_id`.
 
 ## Files
 

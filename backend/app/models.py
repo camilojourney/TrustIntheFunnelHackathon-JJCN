@@ -85,3 +85,15 @@ class AssessmentModel(Base):
     rationale = Column(Text, nullable=False)
     evidence_ids = Column(JSON, default=list)
     unresolved_questions = Column(JSON, default=list)
+
+
+class TraceEventModel(Base):
+    __tablename__ = "trace_events"
+
+    id = Column(String, primary_key=True)
+    session_id = Column(String, index=True, nullable=False)
+    candidate_id = Column(String, index=True, nullable=True)
+    stage = Column(String, nullable=False)
+    status = Column(String, nullable=False)
+    created_at = Column(String, nullable=False)
+    details = Column(JSON, default=dict)

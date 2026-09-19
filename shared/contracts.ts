@@ -24,6 +24,7 @@ export type InterviewAnswer = {
   id: string;
   question_id: string;
   transcript: string;
+  original_transcript?: string | null;
   audio_url?: string;
   created_at: string;
 };
@@ -48,6 +49,7 @@ export type ClaimAssessment = {
 };
 
 export type CandidateReport = {
+  session_id?: string | null;
   candidate_id: string;
   role_title: string;
   claims: Claim[];

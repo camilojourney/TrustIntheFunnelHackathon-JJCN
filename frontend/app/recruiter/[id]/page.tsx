@@ -12,10 +12,11 @@ export default async function RecruiterReport({
   searchParams,
 }: PageProps<"/recruiter/[id]">) {
   const { id } = await params;
-  const { source: raw } = await searchParams;
+  const { source: raw, session } = await searchParams;
   const { report, source, liveFailed } = await getReport(id, wantedSource(raw));
   // The toggle marks what is really on screen, not what was asked for.
   const onScreen = source === "api" ? "live" : "demo";
+  const traceSession = typeof session === "string" ? session : report.session_id;
 
   return (
     <main className="mx-auto w-full max-w-4xl space-y-6 px-4 py-8">
@@ -45,6 +46,11 @@ export default async function RecruiterReport({
         </div>
       </header>
       <DecisionSupportBanner />
+      {traceSession && (
+        <Link className="text-sky-700 underline print:hidden" href={`/traces/${encodeURIComponent(traceSession)}`}>
+          Open session execution trace
+        </Link>
+      )}
       <ReportView report={report} />
     </main>
   );

@@ -3,3 +3,14 @@ backend/__pycache__/
 backend/**/__pycache__/
 backend/claimproof.db
 .env
+.venv/
+*.db
+__pycache__/
+*.pyc
+node_modules/
+.next/
+playwright-report/
+test-results/
+coverage/
+*.tsbuildinfo
+.DS_Store

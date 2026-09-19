@@ -13,6 +13,7 @@ from app.llm.transcription import TranscriptionError, get_transcriber
 from app.models import AnswerModel, InterviewModel, QuestionModel
 from app.routes.applications import find_claim
 from app.services.grounding import build_fallback_grounding, check_grounding
+from app.services.tracing import record_event
 
 router = APIRouter()
 
@@ -57,6 +58,7 @@ class NextQuestionResponse(BaseModel):
 class AnswerRequest(BaseModel):
     question_id: str
     transcript: str
+    original_transcript: str | None = None
 
 
 class AnswerResponse(BaseModel):
@@ -134,6 +136,7 @@ def create_interview(
         )
     )
     db.commit()
+    record_event(db, "interview_started", payload.candidate_id, interview_id, claim_ids=claim_ids)
     return InterviewCreateResponse(interview_id=interview_id)
 
 
@@ -179,6 +182,8 @@ def next_question(interview_id: str, db: Session = Depends(get_db)) -> NextQuest
         )
         db.add(opening_row)
         db.commit()
+        record_event(db, "question_generation", interview.candidate_id, interview_id,
+                     claim_id=claim_id, question_id=opening.id)
 
     return NextQuestionResponse(completed=False, question=_question_to_schema(opening_row))
 
@@ -252,7 +257,7 @@ def _decide_follow_up(
 def submit_answer(
     interview_id: str, payload: AnswerRequest, db: Session = Depends(get_db)
 ) -> AnswerResponse:
-    return record_answer(interview_id, payload.question_id, payload.transcript, db)
+    return record_answer(interview_id, payload.question_id, payload.transcript, db, payload.original_transcript)
 
 
 @router.post("/api/interviews/{interview_id}/answers/audio", response_model=AudioAnswerResponse)
@@ -295,7 +300,7 @@ def _run_grounding(
 
 
 def record_answer(
-    interview_id: str, question_id: str, transcript: str, db: Session
+    interview_id: str, question_id: str, transcript: str, db: Session, original_transcript: str | None = None
 ) -> AnswerResponse:
     interview = db.get(InterviewModel, interview_id)
     if interview is None:
@@ -305,6 +310,21 @@ def record_answer(
     if question_row is None or question_row.interview_id != interview_id:
         raise HTTPException(status_code=404, detail="Question not found in this interview")
     claim_id, kind = question_row.claim_id, question_row.kind
+
+    if not transcript.strip():
+        raise HTTPException(status_code=422, detail="Answer must contain text")
+    previous = db.query(AnswerModel).filter_by(interview_id=interview_id, question_id=question_id).all()
+    accepted = next((a for a in previous if (a.grounding or {}).get("on_topic")), None)
+    if accepted is not None:
+        if accepted.transcript != transcript:
+            raise HTTPException(status_code=409, detail="This question already has a submitted answer")
+        # A retried request must not advance the claim index a second time.
+        follow_up = db.query(QuestionModel).filter_by(interview_id=interview_id, claim_id=claim_id, kind="follow_up").first()
+        if kind == "opening" and follow_up is not None and interview.current_index < len(interview.claim_ids) and interview.claim_ids[interview.current_index] == claim_id:
+            return AnswerResponse(next_action="follow_up", question=_question_to_schema(follow_up))
+        return _advance_response(interview)
+    if interview.current_index >= len(interview.claim_ids) or interview.claim_ids[interview.current_index] != claim_id:
+        raise HTTPException(status_code=409, detail="This is not the current interview question")
 
     claim = find_claim(interview.candidate_id, claim_id, db)
     if claim is None:
@@ -321,11 +341,13 @@ def record_answer(
             transcript=transcript,
             audio_url=None,
             created_at=datetime.now(timezone.utc).isoformat(),
-            grounding=grounding.model_dump(),
+            grounding={**grounding.model_dump(), "original_transcript": original_transcript},
         )
     )
     db.commit()
 
+    record_event(db, "answer_submission", interview.candidate_id, interview_id,
+                 question_id=question_id, claim_id=claim_id, on_topic=grounding.on_topic)
     if not grounding.on_topic:
         # Content doesn't address the claim/question — reprompt rather than fabricating a follow-up.
         return AnswerResponse(
@@ -353,6 +375,8 @@ def record_answer(
             )
         )
         db.commit()
+        record_event(db, "follow_up_generation", interview.candidate_id, interview_id,
+                     question_id=follow_up_question.id, claim_id=claim_id)
         return AnswerResponse(next_action="follow_up", question=follow_up_question)
 
     interview.current_index += 1

@@ -44,6 +44,17 @@ export function ReportView({
 
   return (
     <div className="space-y-6">
+      {report.answers.some(a => a.original_transcript && a.original_transcript !== a.transcript) && (
+        <details className="rounded-lg border border-slate-200 bg-white p-4">
+          <summary className="cursor-pointer font-medium">Transcript corrections (originals retained)</summary>
+          {report.answers.filter(a => a.original_transcript && a.original_transcript !== a.transcript).map(a => (
+            <div key={a.id} className="mt-3 space-y-1 text-sm">
+              <p className="font-medium">{report.questions.find(q => q.id === a.question_id)?.text}</p>
+              <p>Original: {a.original_transcript}</p><p>Reviewed: {a.transcript}</p>
+            </div>
+          ))}
+        </details>
+      )}
       <StatusSummary counts={counts} printView={printView} />
       {!printView && (
         <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
