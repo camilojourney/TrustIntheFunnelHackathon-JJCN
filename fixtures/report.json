@@ -1,0 +1,227 @@
+{
+  "candidate_id": "demo-candidate-1",
+  "role_title": "Machine Learning Engineer",
+  "claims": [
+    {
+      "id": "claim-rag-pipeline",
+      "candidate_id": "demo-candidate-1",
+      "source_document": "resume",
+      "source_excerpt": "Built a hybrid Neo4j and vector RAG pipeline that improved F1 by 2.75 percentage points across 200 evaluation queries.",
+      "category": "project",
+      "statement": "Built a hybrid graph and vector RAG pipeline and measured a 2.75 point F1 gain on 200 queries.",
+      "importance": "high",
+      "entities": [
+        "Neo4j",
+        "vector retrieval",
+        "RAG",
+        "F1"
+      ]
+    },
+    {
+      "id": "claim-aws-service",
+      "candidate_id": "demo-candidate-1",
+      "source_document": "resume",
+      "source_excerpt": "Deployed a fault-tolerant cloud service on AWS.",
+      "category": "employment",
+      "statement": "Deployed a cloud service on AWS that tolerates faults.",
+      "importance": "medium",
+      "entities": [
+        "AWS",
+        "EC2",
+        "S3",
+        "load balancing"
+      ]
+    },
+    {
+      "id": "claim-inference-throughput",
+      "candidate_id": "demo-candidate-1",
+      "source_document": "resume",
+      "source_excerpt": "Improved inference throughput by 10x.",
+      "category": "impact",
+      "statement": "Increased model inference throughput by a factor of ten.",
+      "importance": "high",
+      "entities": [
+        "inference",
+        "throughput"
+      ]
+    }
+  ],
+  "questions": [
+    {
+      "id": "q-a1",
+      "claim_id": "claim-rag-pipeline",
+      "text": "Why did you combine graph and vector retrieval, and how did you measure whether the hybrid system helped?",
+      "kind": "opening",
+      "intent": "Check the design reasoning and the evaluation method behind the F1 number."
+    },
+    {
+      "id": "q-a2",
+      "claim_id": "claim-rag-pipeline",
+      "text": "You mentioned improved answer quality but higher indexing cost. What caused that latency, and how would you reduce it without changing the evaluation protocol?",
+      "kind": "follow_up",
+      "intent": "Probe the trade-off the candidate raised in the first answer."
+    },
+    {
+      "id": "q-b1",
+      "claim_id": "claim-aws-service",
+      "text": "Describe the AWS service you deployed. What happens when one instance fails?",
+      "kind": "opening",
+      "intent": "Check what \"fault-tolerant\" means in this deployment."
+    },
+    {
+      "id": "q-b2",
+      "claim_id": "claim-aws-service",
+      "text": "You listed EC2, S3, a queue, and a load balancer. How does the system recover in-flight work after a failure, and what triggers scaling?",
+      "kind": "follow_up",
+      "intent": "Probe failure recovery and autoscaling, which the first answer did not cover."
+    },
+    {
+      "id": "q-c1",
+      "claim_id": "claim-inference-throughput",
+      "text": "What was the baseline for the 10x throughput gain, and how did you measure it?",
+      "kind": "opening",
+      "intent": "Establish the baseline, load conditions, and measurement method."
+    },
+    {
+      "id": "q-c2",
+      "claim_id": "claim-inference-throughput",
+      "text": "What batch size, hardware, and request load did you use for the before and after measurements?",
+      "kind": "follow_up",
+      "intent": "Get the measurement conditions the first answer left out."
+    }
+  ],
+  "answers": [
+    {
+      "id": "ans-a1",
+      "question_id": "q-a1",
+      "transcript": "Vector search alone missed multi-hop questions, for example which supplier ships a part used in a given product. So I kept entities and relations in Neo4j and used Cypher expansion from the entities found in the query, then merged those results with the top-k vector hits and re-ranked them. I built a set of 200 queries with labelled answers. I ran vector-only and hybrid on the same set and compared token-level F1. Hybrid was 2.75 points higher, and most of the gain came from the multi-hop subset. The answer quality went up, but indexing cost went up too.",
+      "created_at": "2026-09-19T15:02:10Z"
+    },
+    {
+      "id": "ans-a2",
+      "question_id": "q-a2",
+      "transcript": "The latency came from entity extraction at index time. Every chunk went through an LLM call to pull entities and relations before the write to Neo4j. I would batch those calls, cache the extraction for unchanged chunks by content hash, and only re-index the changed documents. None of that touches the 200-query evaluation set, so the F1 comparison stays valid.",
+      "created_at": "2026-09-19T15:04:05Z"
+    },
+    {
+      "id": "ans-b1",
+      "question_id": "q-b1",
+      "transcript": "It was an API on EC2 behind a load balancer. Files went to S3 and the slow jobs went through a queue to worker instances. If an instance fails, the load balancer stops sending traffic to it.",
+      "created_at": "2026-09-19T15:06:30Z"
+    },
+    {
+      "id": "ans-b2",
+      "question_id": "q-b2",
+      "transcript": "I think the queue retries the message. I am not sure about the exact settings. For scaling, the ops team set that up, so I do not know what the trigger was.",
+      "created_at": "2026-09-19T15:08:12Z"
+    },
+    {
+      "id": "ans-c1",
+      "question_id": "q-c1",
+      "transcript": "It was a lot faster after I optimized it. Before, it was slow, and after it handled about ten times more. I do not remember the exact numbers.",
+      "created_at": "2026-09-19T15:10:01Z"
+    },
+    {
+      "id": "ans-c2",
+      "question_id": "q-c2",
+      "transcript": "I do not remember the batch size. It was on a GPU. We did not have a formal load test, it was from what I saw in the logs.",
+      "created_at": "2026-09-19T15:11:20Z"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "ev-a1",
+      "claim_id": "claim-rag-pipeline",
+      "type": "interview_excerpt",
+      "source_label": "Answer to opening question",
+      "excerpt": "I ran vector-only and hybrid on the same set and compared token-level F1. Hybrid was 2.75 points higher, and most of the gain came from the multi-hop subset.",
+      "supports": "The candidate describes the comparison method, the evaluation set, and where the gain came from.",
+      "limitations": "This is the candidate's own account. The evaluation data was not reviewed."
+    },
+    {
+      "id": "ev-a2",
+      "claim_id": "claim-rag-pipeline",
+      "type": "interview_excerpt",
+      "source_label": "Answer to follow-up question",
+      "excerpt": "The latency came from entity extraction at index time. Every chunk went through an LLM call to pull entities and relations before the write to Neo4j.",
+      "supports": "The candidate explains the cause of the indexing cost and gives a specific fix that keeps the evaluation valid.",
+      "limitations": "The proposed fix was described, not shown."
+    },
+    {
+      "id": "ev-a3",
+      "claim_id": "claim-rag-pipeline",
+      "type": "document_excerpt",
+      "source_label": "Synthetic demo artifact (fixture; not live-collected)",
+      "excerpt": "Hybrid retrieval over Neo4j and a vector index. Evaluation: 200 labelled queries. F1: vector-only 61.30, hybrid 64.05.",
+      "source_url": "/demo-artifact",
+      "supports": "The fictional figures illustrate a 2.75 point F1 difference.",
+      "limitations": "Synthetic data: no real project or benchmark was verified. Artifact existence does not prove candidate authorship."
+    },
+    {
+      "id": "ev-b1",
+      "claim_id": "claim-aws-service",
+      "type": "interview_excerpt",
+      "source_label": "Answer to opening question",
+      "excerpt": "It was an API on EC2 behind a load balancer. Files went to S3 and the slow jobs went through a queue to worker instances.",
+      "supports": "The candidate names the main components and how traffic moves away from a failed instance.",
+      "limitations": "Naming components does not show how the system recovers from a failure."
+    },
+    {
+      "id": "ev-b2",
+      "claim_id": "claim-aws-service",
+      "type": "interview_excerpt",
+      "source_label": "Answer to follow-up question",
+      "excerpt": "I think the queue retries the message. I am not sure about the exact settings. For scaling, the ops team set that up.",
+      "supports": "The candidate knows that queue retries exist.",
+      "limitations": "The candidate did not explain recovery of in-flight work or the autoscaling trigger."
+    },
+    {
+      "id": "ev-c1",
+      "claim_id": "claim-inference-throughput",
+      "type": "interview_excerpt",
+      "source_label": "Answer to opening question",
+      "excerpt": "Before, it was slow, and after it handled about ten times more. I do not remember the exact numbers.",
+      "supports": "The candidate repeats the claim.",
+      "limitations": "No baseline, load conditions, or measurement method was given. No external benchmark is available."
+    }
+  ],
+  "assessments": [
+    {
+      "claim_id": "claim-rag-pipeline",
+      "status": "demonstrated",
+      "rationale": "The candidate gave a relevant and technically specific explanation of the retrieval design, the 200-query evaluation, the F1 comparison, and the indexing latency trade-off. A synthetic artifact illustrates the scenario; no public project was verified. This does not prove authorship.",
+      "evidence_ids": [
+        "ev-a1",
+        "ev-a2",
+        "ev-a3"
+      ],
+      "unresolved_questions": []
+    },
+    {
+      "claim_id": "claim-aws-service",
+      "status": "partially_demonstrated",
+      "rationale": "The candidate named EC2, S3, a queue, and load balancing, and explained traffic failover. The answers did not explain failure recovery or autoscaling behavior, which the words \"fault-tolerant\" depend on.",
+      "evidence_ids": [
+        "ev-b1",
+        "ev-b2"
+      ],
+      "unresolved_questions": [
+        "How does the system recover in-flight work when a worker fails?",
+        "What triggers autoscaling, and who configured it?"
+      ]
+    },
+    {
+      "claim_id": "claim-inference-throughput",
+      "status": "unresolved",
+      "rationale": "The interview did not gather enough relevant evidence. The candidate could not define the baseline, the load conditions, or the measurement method. No external benchmark is available.",
+      "evidence_ids": [
+        "ev-c1"
+      ],
+      "unresolved_questions": [
+        "What was the baseline throughput, and on what hardware?",
+        "What batch size and request load were used before and after?",
+        "Is there a benchmark log or dashboard that a human reviewer can check?"
+      ]
+    }
+  ]
+}
