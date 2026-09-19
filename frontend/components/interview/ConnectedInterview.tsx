@@ -1,14 +1,13 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import type { CandidateReport, Claim, EvidenceItem, InterviewQuestion } from "@shared/contracts";
 import fixture from "@fixtures/report.json";
 import { api } from "@/lib/session-api";
-import { MicrophoneCapture } from "./MicrophoneCapture";
+import { SageInterviewView } from "./SageInterviewView";
 
 const KEY = "claimproof-integrated-session-v1";
 type Event = { id: string; stage: string; status: string; created_at: string; details: Record<string, unknown> };
-type Session = {
+export type Session = {
   id: string; mode: "live" | "offline"; candidate: string; interview: string;
   claims: Claim[]; question: InterviewQuestion | null; report?: CandidateReport;
   questions: InterviewQuestion[]; answers: CandidateReport["answers"]; evidence: EvidenceItem[]; events: Event[];
@@ -25,7 +24,6 @@ function event(stage: string, details: Record<string, unknown> = {}): Event {
 function offlineQuestion(claim: Claim): InterviewQuestion {
   return { id: crypto.randomUUID(), claim_id: claim.id, kind: "opening", text: `Walk through how you accomplished: ${claim.statement}`, intent: "Explain the mechanism, measurement, and limitations." };
 }
-const button = "rounded-lg bg-slate-900 px-4 py-3 font-medium text-white disabled:opacity-40";
 
 export function ConnectedInterview() {
   const [session, setSession] = useState<Session | null>(null);
@@ -141,34 +139,17 @@ export function ConnectedInterview() {
     });
   }
   const claim = session?.claims.find(c => c.id === session.question?.claim_id);
-  return <main className="mx-auto w-full max-w-4xl space-y-6 px-5 py-10">
-    <header className="flex items-center justify-between"><Link href="/candidate" className="text-xl font-semibold">ClaimProof</Link><Link className="text-sky-700 underline" href="/recruiter">Recruiter view</Link></header>
-    <h1 className="text-3xl font-semibold">The evidence behind your application</h1>
-    <p className="text-slate-600">One fictional candidate, three claims, and a conversation grounded in what you explain. Voice and text are equal; no camera or behavioral scoring.</p>
-    {error && <p role="alert" className="rounded-lg bg-red-50 p-4 text-red-800">{error}</p>}
-    {notice && <p role="status" className="rounded-lg bg-amber-50 p-4 text-amber-900">{notice}</p>}
-    {!session ? <section className="space-y-5 rounded-xl border bg-white p-6">
-      <h2 className="text-xl font-semibold">Machine Learning Engineer · fictional demo</h2>
-      <p>Only the seeded resume is used in this integration. Your submitted answers are saved to the local backend in connected mode, or this browser in offline mode. Reset clears the demo session.</p>
-      <label className="flex gap-3"><input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} />I understand how the demo uses my answers.</label>
-      <div className="flex flex-wrap gap-3"><button className={button} disabled={busy || !consent} onClick={() => start("live")}>Start connected demo</button><button className={button} disabled={busy || !consent} onClick={() => start("offline")}>Start offline rehearsal</button></div>
-    </section> : <>
-      <div className="flex flex-wrap items-center justify-between gap-3"><p className="font-medium">{session.mode === "live" ? "Connected session" : "Offline rehearsal · simulated flow"}</p><div className="flex gap-4"><a className="text-sky-700 underline" href={`/traces/${session.id}?source=${session.mode}`}>Session trace</a><button className="text-slate-700 underline" disabled={busy} onClick={reset}>Reset demo</button></div></div>
-      <details className="rounded-xl border bg-white p-5"><summary className="cursor-pointer font-semibold">Review all three source claims</summary><ul className="mt-4 space-y-3">{session.claims.map(c => <li key={c.id}><strong>{c.statement}</strong><blockquote className="text-slate-600">{c.source_excerpt}</blockquote></li>)}</ul></details>
-      {session.question ? <>
-        <section className="space-y-4 rounded-xl border bg-white p-6">
-          <p className="text-sm uppercase tracking-wide text-slate-500">{session.question.kind === "follow_up" ? "Follow-up" : "Opening question"} · Claim {session.claims.findIndex(c => c.id === claim?.id) + 1} of 3</p>
-          <blockquote className="border-l-4 border-sky-200 pl-4 text-slate-600">{claim?.source_excerpt}</blockquote>
-          <h2 className="text-2xl font-semibold">{session.question.text}</h2><p className="text-sm text-slate-600">Why this was asked: {session.question.intent}</p>
-          {original === null ? <>
-            <MicrophoneCapture transcript={draft} onTranscript={setDraft} onFallbackToText={setNotice} onAudio={transcribe} />
-            <label className="block font-medium">Your answer<textarea className="mt-2 block w-full rounded-lg border p-3 font-normal" rows={5} value={draft} onChange={e => setDraft(e.target.value)} /></label>
-            <div className="flex flex-wrap gap-3"><button className={button} disabled={busy || !draft.trim()} onClick={() => setOriginal(draft)}>Review answer</button><button className="text-sky-700 underline" disabled={busy} onClick={() => { setDraft(session.question!.kind === "follow_up" && claim?.id === "claim-rag-pipeline" ? ragFollowup : sampleAnswers[claim!.id]); setNotice("Example answer inserted for the fictional demo. It is not a real candidate response."); }}>Use example answer</button></div>
-          </> : <><p className="text-sm text-slate-600">Original transcript: {original}</p><label className="block font-medium">Correct transcript before submitting<textarea className="mt-2 block w-full rounded-lg border p-3 font-normal" rows={5} value={draft} onChange={e => setDraft(e.target.value)} /></label><button className={button} disabled={busy || !draft.trim()} onClick={submit}>Submit reviewed answer</button></>}
-        </section>
-        <section className="space-y-3 rounded-xl border bg-white p-5"><h2 className="font-semibold">Supporting evidence for the RAG claim</h2><p className="text-sm text-slate-600">The controlled artifact is fictional. Live retrieval requires an approved public host.</p><a href="/demo-artifact" target="_blank" className="text-sky-700 underline">Inspect synthetic artifact</a><div className="flex flex-wrap gap-3"><select aria-label="Evidence mode" className="rounded border p-2" value={evidenceMode} onChange={e => setEvidenceMode(e.target.value as "fixture" | "live")}><option value="fixture">Synthetic fixture</option><option value="live">Live public page</option></select><input aria-label="Evidence URL" className="min-w-0 flex-1 rounded border p-2" value={evidenceUrl} onChange={e => setEvidenceUrl(e.target.value)} /><button className={button} disabled={busy} onClick={attach}>Attach evidence</button></div>{session.evidence.map(e => <p key={e.id} className="text-sm">{e.source_label}: {e.limitations}</p>)}</section>
-      </> : <section className="space-y-5 rounded-xl border bg-white p-6"><h2 className="text-2xl font-semibold">Conversation complete</h2><p>Your answers and evidence are ready for review. The report describes available evidence and remaining questions.</p><a className="inline-block rounded-lg bg-slate-900 px-4 py-3 text-white" href={session.mode === "live" ? `/recruiter/${session.candidate}?source=live&session=${session.id}` : `/recruiter/offline?session=${session.id}`}>Open evidence report</a></section>}
-    </>}
-    {busy && <p role="status">Saving or loading…</p>}
-  </main>;
+  return <SageInterviewView
+    session={session} busy={busy} error={error} notice={notice}
+    consent={consent} draft={draft} original={original}
+    evidenceUrl={evidenceUrl} evidenceMode={evidenceMode}
+    setConsent={setConsent} setDraft={setDraft} setOriginal={setOriginal}
+    setNotice={setNotice} setEvidenceUrl={setEvidenceUrl} setEvidenceMode={setEvidenceMode}
+    start={start} submit={submit} attach={attach} reset={reset} transcribe={transcribe}
+    useExample={() => {
+      if (!session?.question || !claim) return;
+      setDraft(session.question.kind === "follow_up" && claim.id === "claim-rag-pipeline" ? ragFollowup : sampleAnswers[claim.id]);
+      setNotice("Example answer inserted for the fictional demo. It is not a real candidate response.");
+    }}
+  />;
 }
