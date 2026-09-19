@@ -13,12 +13,16 @@ from sqlalchemy.pool import StaticPool
 def client(monkeypatch):
     """Run offline against a fresh database without touching claimproof.db."""
     monkeypatch.setenv("DEMO_MODE", "true")
+    monkeypatch.setenv("PRISMTRACE_API_KEY", "")
+    monkeypatch.setenv("PRISMTRACE_PROJECT_ID", "")
 
     from app import config, db
     from app.llm import client as llm_client, transcription
 
     for module in (config, llm_client, transcription):
         monkeypatch.setattr(module, "DEMO_MODE", True)
+    monkeypatch.setattr(config, "PRISMTRACE_API_KEY", "")
+    monkeypatch.setattr(config, "PRISMTRACE_PROJECT_ID", "")
 
     def reject_network(*args, **kwargs):
         pytest.fail("Demo tests must not make network calls")

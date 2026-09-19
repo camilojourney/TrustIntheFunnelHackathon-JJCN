@@ -30,7 +30,7 @@ The Sage candidate interface supports voice, typed answers, transcript review, a
 
 ## Configuration
 
-Backend settings are listed in .env.example. The default SQLite database is claimproof.db in the backend process's working directory; DATABASE_URL can override it. DEMO_MODE=true uses deterministic model/transcription fixtures; audio fixture text is labeled as simulated in the UI.
+Backend settings are listed in .env.example. The default SQLite database is claimproof.db in the backend process's working directory; DATABASE_URL can override it. DEMO_MODE=true uses deterministic model/transcription fixtures; audio fixture text is labeled as simulated in the UI. Optional PRISMTRACE_HOST, PRISMTRACE_PROJECT_ID, and PRISMTRACE_API_KEY mirror local traces to Block Convey PRISM; empty values keep traces local-only.
 
 frontend/.env.example documents API_BASE (default http://127.0.0.1:8000) and NEXT_PUBLIC_DEMO_MODE. The candidate uses a same-origin server proxy. No credentials belong in public frontend variables.
 

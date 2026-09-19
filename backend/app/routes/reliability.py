@@ -7,6 +7,7 @@ from app import config
 from app.db import get_db
 from app.models import ClaimModel, TraceEventModel
 from app.integrations.evidence import collect_evidence, CollectionError
+from app.integrations.prism import is_configured as prism_is_configured
 from app.routes.evidence import add_evidence, EvidenceCreateRequest
 from app.services.seed import reset_demo_state
 from app.services.tracing import record_event, session_context
@@ -41,7 +42,7 @@ def collect(claim_id: str, payload: CollectRequest, db: Session = Depends(get_db
 @router.get("/api/traces/{session_id}")
 def trace(session_id: str, db: Session = Depends(get_db)):
     rows = db.query(TraceEventModel).filter_by(session_id=session_id).order_by(TraceEventModel.created_at).all()
-    return {"session_id": session_id, "source": "local", "events": [
+    return {"session_id": session_id, "source": "local", "prism": {"configured": prism_is_configured()}, "events": [
         {"id": r.id, "stage": r.stage, "status": r.status, "created_at": r.created_at, "details": r.details}
         for r in rows
     ]}
