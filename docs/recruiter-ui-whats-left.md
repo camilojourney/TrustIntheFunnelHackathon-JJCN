@@ -1,60 +1,113 @@
 # Recruiter UI — what is left
 
-Prior owner: Jacob (left the hackathon Sep 19). Any teammate can take `feat/recruiter-ui`.
-Round 12 of the work plans updates this file. Until then, this is the full list.
+Prior owner: Jacob. Any teammate can take the remaining work.
 
 ## State
-- Branch `feat/recruiter-ui`. See `git log --oneline` for the rounds (one commit per round, rounds 1 to 9 are in).
-- Run: `cd frontend && npm install && npm run dev`, then open `http://localhost:3000/recruiter`.
-- No backend or keys necessary. It loads seeded reports. Details: [recruiter-ui.md](recruiter-ui.md).
 
-## 1. Build work left (plans are written)
-Plans: branch `recruiter-ui-plans`, folder `docs/recruiter-ui-plans` (README first). One person runs them, in order.
-- [ ] Round 10: "Evidence timeline" button easier to see (10 min)
-- [ ] Round 11: role pills on the queue + a "Your next step" control on the queue and the report (35 min)
-- [ ] Round 12: final Sage logo (badge) + header alignment + update this file (15 min)
-- [ ] Open the PR from `feat/recruiter-ui` into `main`. Nobody pushes to `main` directly.
+- Branch: `feat/recruiter-ui`.
+- Last commit: see `git log -1` on `feat/recruiter-ui`.
+- Rounds 1–12 are implemented. No backend or keys necessary for the seeded demo.
+- Open `http://localhost:3000/recruiter` after starting the app:
 
-## 2. Clicks nobody has checked by hand yet
-Builds and page-text checks pass for every round. No person or browser test has clicked these.
+```sh
+cd frontend
+npm install
+npm run dev
+```
 
-Queue page (`/recruiter`)
-- [ ] All 4 rows show the status counts on their own line
-- [ ] Dark / light button, top right. Reload keeps the choice, no white flash
+## Clicks nobody has checked by hand yet
 
-Report page (`/recruiter/demo`)
-- [ ] Each "i" on a status badge shows a definition
-- [ ] Each status filter changes the cards
-- [ ] "Live" shows an amber line when no backend runs. "Demo" removes it
-- [ ] "Print" opens the print dialog. Print from dark mode gives a light page
-- [ ] "PDF" opens a print-ready tab with no buttons
-- [ ] "Why this status" is bold, 2 sentences, no "…"
-- [ ] Two closed cards fit in a 900 px tall window
-- [ ] Dark / light button, top right. Dark mode looks right on the cards
+Automated build, markup, storage, and interaction checks do not replace a human
+visual review. Keep each item unchecked until someone performs that check.
 
-Details modal
-- [ ] "Details" opens a centered modal. Esc closes it. Focus returns to the link
-- [ ] Question = dark "Q" chip. Answer = blue box. Full answer text shows
-- [ ] Dark mode looks right
+### Round 6 — evidence timeline
 
-Evidence timeline drawer
-- [ ] 3 pills: Questions, Evidence, Assessment. The Assessment pill has the status color
-- [ ] "Source: resume" is on the right of the Claim label
-- [ ] Each question has an "i" that shows why it was asked
-- [ ] No record ids on screen (`claim-a`, `q-a1`)
-- [ ] One date line at the top of Questions, 12-hour clock
-- [ ] One step per question, clear gaps, no doubled labels
-- [ ] "Based on N evidence items" opens the Evidence tab
-- [ ] Esc closes the drawer. Dark mode looks right
+- [ ] Open all three drawer pills: Questions, Evidence, and Assessment.
+- [ ] Confirm the Assessment pill carries its assessment status color.
+- [ ] Confirm "Source: resume" appears to the right of Claim.
+- [ ] Open the "i" on each question and read why it was asked.
+- [ ] Confirm no record ids appear as visible screen text.
+- [ ] Confirm there is one date line and it uses a 12-hour clock.
+- [ ] Click "Based on N evidence items" and confirm it opens Evidence.
+- [ ] Press Esc to close the drawer.
 
-## 3. Open work with no plan yet
-- [ ] Merge with `feat/candidate-ui`. 3 add/add conflicts: `frontend/app/globals.css`, `layout.tsx`, `page.tsx`. That branch also has a second Next app at the repo root (`app/`, `package.json`); PLAN.md puts all UI in `frontend/`. Proposal: one app in `frontend/`, candidate pages in `frontend/app/candidate`, `page.tsx` = a home page with 2 links. About 15 min.
-- [ ] Live API: `GET /api/candidates/{id}/report` must return `CandidateReport` (`shared/contracts.ts`). Env names and the `?source=live` test are in [recruiter-ui.md](recruiter-ui.md), "Connect the live API".
-- [ ] Static demo PDF: open `/recruiter/demo/print`, Cmd+P, save as `frontend/public/demo-report.pdf`, then make the PDF button open it for id `demo`. About 10 min.
-- [ ] After round 11: the next step saves in the browser only. A real version needs `POST /api/candidates/{id}/next-step` and an audit trail (Person 1).
-- [ ] A link from the report to Person 4's trace view.
-- [ ] Alex Rivera and Daniel Reyes have the same status mix (1 / 1 / 1). Fine, or change one fixture.
-- [ ] "Sage" is also a large accounting and HR software company. Rename before any public launch.
+### Round 8 — details
+
+- [ ] Click Details and confirm it opens a centered modal.
+- [ ] Press Esc to close the modal.
+- [ ] Confirm focus returns to the Details trigger.
+
+### Round 9 — queue and themes
+
+- [ ] Confirm each queue row has status counts on their own line.
+- [ ] Toggle the theme button on the queue.
+- [ ] Toggle the theme button on the report.
+- [ ] Inspect the queue in dark mode.
+- [ ] Inspect the report in dark mode.
+- [ ] Inspect the Details modal in dark mode.
+- [ ] Inspect the evidence drawer in dark mode.
+- [ ] Inspect an "i" popover in dark mode.
+- [ ] Reload and confirm the saved theme returns with no flash.
+- [ ] Print from dark mode and confirm the paper view is light.
+
+### Round 10 — evidence button
+
+- [ ] Confirm Evidence timeline is easy to see in light mode.
+- [ ] Confirm Evidence timeline is easy to see in dark mode.
+
+### Round 11 — roles and recruiter choices
+
+- [ ] Confirm All is the default role pill and looks subtle.
+- [ ] Select a role and confirm only its candidates remain.
+- [ ] Click that role again and confirm the filter clears.
+- [ ] Open the next-step menu on a queue row and choose a value.
+- [ ] Open the next-step menu on a report and choose a value.
+- [ ] Reload both pages and confirm they show the same saved choice.
+- [ ] Use Undo on the report and confirm the previous value returns.
+- [ ] Use the smaller step-filter row together with a role filter.
+- [ ] Confirm every choice uses the same neutral chip color.
+- [ ] Print and confirm no next-step control or choice appears.
+
+### Older controls
+
+- [ ] Open each status "i" and read its definition.
+- [ ] Use each status filter and confirm the visible cards change.
+- [ ] Switch Demo | Live and confirm an unavailable API produces the amber line.
+- [ ] Use Print and inspect the print dialog.
+- [ ] Use PDF and inspect the separate print-ready tab.
+
+### Round 12 — badge
+
+- [ ] Confirm the badge and Sage word align in both themes.
+- [ ] Confirm the logo and heading share a left edge on queue and report.
+- [ ] Confirm the browser tab icon matches the header badge.
+
+## Open work for the next owner
+
+- [ ] **Candidate integration — about 15 min.** Merge with `feat/candidate-ui`.
+  The original branch comparison has three add/add conflicts:
+  `frontend/app/globals.css`, `frontend/app/layout.tsx`, and
+  `frontend/app/page.tsx`, plus a second Next app at the repo root on that branch.
+  Keep one app in `frontend/`, candidate pages in `frontend/app/candidate`, and a
+  home page with two links. Use the integrated work on `Kireeti` as a reference
+  when reconciling these recruiter changes.
+- [ ] **Live API — about 30–60 min.** Connect `GET /api/candidates/{id}/report`
+  returning `CandidateReport` from `shared/contracts.ts`. Environment names and
+  the `?source=live` check are in
+  [Connect the live API](recruiter-ui.md#connect-the-live-api).
+- [ ] **Persist next steps — about 45–60 min.** The current choice is browser-only.
+  A real version needs `POST /api/candidates/{id}/next-step` and an audit trail
+  from Person 1.
+- [ ] **Static demo PDF — about 10 min.** Open `/recruiter/demo/print`, use Cmd+P,
+  save as `frontend/public/demo-report.pdf`, then make the PDF button open that
+  file for id `demo`.
+- [ ] **Execution trace — about 15 min.** Link the report to Person 4's trace view.
+- [ ] **Demo variety — about 5 min.** Daniel Reyes and Alex Rivera have the same
+  status mix (1 / 1 / 1). Keep it if useful, or change one fixture.
+- [ ] **Product name — about 20–30 min for UI changes.** "Sage" is also a large
+  accounting and HR software company. Rename before any public launch.
 
 ## Rules the UI keeps
-See "Rules the UI keeps" in [recruiter-ui.md](recruiter-ui.md). Short form: decision support, not a hiring decision; every evidence item shows its limitation; all candidates are invented seeded scenarios.
+
+See [Rules the UI keeps](recruiter-ui.md#rules-the-ui-keeps). Recruiter choices
+remain human decisions; the evidence report does not recommend a next step.

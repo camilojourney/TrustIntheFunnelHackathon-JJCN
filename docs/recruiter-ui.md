@@ -5,6 +5,10 @@ What is left: see [recruiter-ui-whats-left.md](recruiter-ui-whats-left.md).
 The product name is **Sage**. It shows in the tab title, the browser tab icon,
 and a wordmark in the header of the queue, the report and the print view
 (`frontend/components/Logo.tsx`, drawing repeated in `frontend/app/icon.svg`).
+The mark is the approved rounded-square badge: a white, pointed leaf and green
+vein on an emerald-700 square. The 24 px mark and word share an inline-flex
+center with no extra margin or padding, and the logo starts at the heading's
+left edge on queue, report, and print pages. Its colors stay fixed in both themes.
 The brand accent is emerald-700; the sky-blue answer box and the status colors
 are not brand colors and do not change.
 
@@ -219,7 +223,7 @@ focus return, and the button-free print view are unchanged.
 - `frontend/lib/candidates.ts` — the queue list `{ id, name }[]` and `candidateName(id)`.
 - `frontend/lib/report.ts` — API fetch with fixture fallback, plus the `SEEDED` id-to-report map. `getReport(id, want)` takes the toggle value.
 - `frontend/lib/join.ts` — joins the flat report into one view per claim. A claim with no assessment shows as unresolved.
-- `frontend/components/Logo.tsx` — the Sage wordmark: a sage leaf with a check as its vein, emerald-700 on white. `frontend/app/icon.svg` is the same drawing and becomes the browser tab icon.
+- `frontend/components/Logo.tsx` — the Sage wordmark with the rounded-square leaf badge. `frontend/app/icon.svg` is the same drawing and becomes the browser tab icon.
 - `frontend/components/report/` — all report components. `ClaimCard.tsx`, `ReportView.tsx`, `Overlay.tsx`, `ClaimDetailsModal.tsx` and `ClaimTimeline.tsx` are client components; `ReportView` owns which layer is open and returns focus to the trigger.
 - `frontend/components/ThemeToggle.tsx` — the dark / light button, the
   `sage-theme` key, and the `beforeprint` / `afterprint` pair that keeps paper
