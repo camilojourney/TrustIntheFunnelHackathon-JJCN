@@ -2,13 +2,20 @@ import Link from "next/link";
 import { DecisionSupportBanner } from "@/components/report/DecisionSupportBanner";
 import { PrintButton } from "@/components/report/PrintButton";
 import { ReportView } from "@/components/report/ReportView";
-import { getReport } from "@/lib/report";
+import { SourceToggle } from "@/components/report/SourceToggle";
+import { getReport, wantedSource } from "@/lib/report";
 
 export const dynamic = "force-dynamic";
 
-export default async function RecruiterReport({ params }: PageProps<"/recruiter/[id]">) {
+export default async function RecruiterReport({
+  params,
+  searchParams,
+}: PageProps<"/recruiter/[id]">) {
   const { id } = await params;
-  const { report, source } = await getReport(id);
+  const { source: raw } = await searchParams;
+  const { report, source, liveFailed } = await getReport(id, wantedSource(raw));
+  // The toggle marks what is really on screen, not what was asked for.
+  const onScreen = source === "api" ? "live" : "demo";
 
   return (
     <main className="mx-auto w-full max-w-4xl space-y-6 px-4 py-8">
@@ -23,16 +30,17 @@ export default async function RecruiterReport({ params }: PageProps<"/recruiter/
               Candidate <span className="font-mono">{report.candidate_id}</span> · {report.role_title}
             </p>
           </div>
-          {/* Control column: same box on every item, pinned right, stacked. */}
-          <div className="flex flex-col items-end gap-2">
-            <span
-              className={`rounded-full px-3 py-1.5 text-sm font-medium print:hidden ${
-                source === "api" ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-700"
-              }`}
-            >
-              {source === "api" ? "Live API data" : "Demo mode: fixture data"}
-            </span>
-            <PrintButton candidateId={report.candidate_id} roleTitle={report.role_title} />
+          {/* One row: Demo | Live, then Print and PDF. It never wraps in itself. */}
+          <div className="flex flex-col items-end gap-1">
+            <div className="flex flex-nowrap items-center gap-2">
+              <SourceToggle id={id} active={onScreen} />
+              <PrintButton id={id} source={onScreen} />
+            </div>
+            {liveFailed && (
+              <p className="text-xs text-amber-700 print:hidden">
+                Live API not reachable. Showing demo data.
+              </p>
+            )}
           </div>
         </div>
       </header>

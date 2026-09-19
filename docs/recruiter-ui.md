@@ -20,7 +20,7 @@ Copy `frontend/.env.example` to `frontend/.env.local`, then set:
 - `NEXT_PUBLIC_API_BASE` — backend base URL, for example `http://localhost:8000`.
 - `NEXT_PUBLIC_DEMO_MODE` — `true` forces the fixture. `false` tries the API first.
 
-The page calls `GET {API_BASE}/api/candidates/{id}/report`. On any error, a timeout of 2.5 s, or a bad shape, it shows the fixture. A badge at the top right of the report says which source is in use. The backend must allow CORS only if you move the fetch to the browser. Today the fetch runs on the Next.js server.
+The page calls `GET {API_BASE}/api/candidates/{id}/report`. On any error, a timeout of 2.5 s, or a bad shape, it shows the fixture. A **Demo | Live** toggle at the top right sets the source through `?source=demo` or `?source=live`; `source=live` tries the API even when `NEXT_PUBLIC_DEMO_MODE=true`, and a small amber line says "Live API not reachable" when it falls back. The highlighted segment names the data that is really on screen. The backend must allow CORS only if you move the fetch to the browser. Today the fetch runs on the Next.js server.
 
 ## What works
 
@@ -30,17 +30,19 @@ The page calls `GET {API_BASE}/api/candidates/{id}/report`. On any error, a time
 - "Evidence timeline" button in each card header opens the drawer: claim → question → answer → evidence → assessment, with ids. Esc closes it. Focus moves to Close on open and returns to the header button on close. The page behind it does not scroll.
 - "Decision support, not a hiring decision" banner on both pages.
 - Cards collapse by default: header, source excerpt, rationale, and a counts line. "Details ▾" opens one card, "Expand all" opens every card. Two claims fit on one screen for the compare moment.
-- "Print" and "PDF" buttons in the header control column. PDF names the file through `document.title`, then restores the title. Print CSS hides the filters, buttons, drawer, and back link, expands every card, and keeps a card on one page.
+- **Demo | Live** toggle, "Print" and "PDF" in one header row. Print opens the browser print dialog. PDF opens `/recruiter/{id}/print` in a new tab with no dialog; Cmd+P from that tab saves it, and the tab title sets the file name.
+- `/recruiter/{id}/print` — a read-only print view: every claim card expanded with evidence and limitations, the three status definitions as plain text, no buttons, no filters, no drawer. It honors `?source=`.
+- Print CSS hides the filters, buttons, drawer, and back link, expands every card, and keeps a card on one page.
 - Status definitions sit behind a round "i" next to each summary label and each card badge. Hover, focus, or click opens it; Esc or a click outside closes it. Print shows the three definitions as text under the summary tiles.
 - `loading.tsx` skeleton on the report route.
-- An API 404 for an unknown id falls back to the fixture and keeps the "Demo mode: fixture data" badge. Verified against a stub API that answers 404.
+- An API 404 for an unknown id falls back to the fixture and keeps the toggle on **Demo**. Verified against a stub API that answers 404.
 
 ## Demo tips
 
 1. Open `/recruiter/demo`. All cards start collapsed.
 2. Press "Details ▾" on claim A (demonstrated) and claim C (unresolved). Both fit on one screen, side by side down the page.
 3. Press "Evidence timeline" on claim C to walk claim → question → answer → evidence → assessment. Esc closes it.
-4. "PDF" for a named print-to-PDF, or "Print" for paper. Every card prints expanded, limitations included.
+4. "PDF" opens the clean report in a new tab; Cmd+P there saves it. "Print" is for paper. Every card prints expanded, limitations included.
 
 ## Not done
 
@@ -51,7 +53,7 @@ The page calls `GET {API_BASE}/api/candidates/{id}/report`. On any error, a time
 
 - `shared/contracts.ts` — types copied verbatim from PLAN.md section 6.
 - `fixtures/report.json` — ML Engineer scenario, claims A/B/C. Person 4 owns it from here.
-- `frontend/lib/report.ts` — API fetch with fixture fallback.
+- `frontend/lib/report.ts` — API fetch with fixture fallback. `getReport(id, want)` takes the toggle value.
 - `frontend/lib/join.ts` — joins the flat report into one view per claim. A claim with no assessment shows as unresolved.
 - `frontend/components/report/` — all report components. `ClaimCard.tsx` and `ReportView.tsx` are client components; `ReportView` owns which cards are open.
 - `frontend/app/globals.css` — the `@media print` block. Per-element print rules use Tailwind `print:` variants.

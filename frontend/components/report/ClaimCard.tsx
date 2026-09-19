@@ -29,11 +29,13 @@ export function ClaimCard({
   expanded,
   onToggle,
   onOpenTimeline,
+  printView = false,
 }: {
   view: ClaimView;
   expanded: boolean;
   onToggle: () => void;
   onOpenTimeline: (trigger: HTMLElement) => void;
+  printView?: boolean;
 }) {
   const { claim, exchanges, evidence, assessment } = view;
   const external = evidence.filter((e) => e.type === "external_artifact");
@@ -60,14 +62,16 @@ export function ClaimCard({
           <h3 className="mt-1 text-lg font-semibold text-slate-900">{claim.statement}</h3>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <StatusBadge status={assessment.status} withInfo />
-          <button
-            type="button"
-            onClick={(e) => onOpenTimeline(e.currentTarget)}
-            className="rounded-full bg-slate-900 px-3 py-1.5 text-sm text-white transition hover:bg-slate-700 print:hidden"
-          >
-            Evidence timeline
-          </button>
+          <StatusBadge status={assessment.status} withInfo={!printView} />
+          {!printView && (
+            <button
+              type="button"
+              onClick={(e) => onOpenTimeline(e.currentTarget)}
+              className="rounded-full bg-slate-900 px-3 py-1.5 text-sm text-white transition hover:bg-slate-700 print:hidden"
+            >
+              Evidence timeline
+            </button>
+          )}
         </div>
       </header>
 
@@ -148,17 +152,19 @@ export function ClaimCard({
         </div>
       </div>
 
-      <footer className="mt-3 border-t border-slate-100 pt-2 print:hidden">
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-expanded={expanded}
-          aria-controls={bodyId}
-          className="text-sm text-slate-500 transition hover:text-slate-800"
-        >
-          {expanded ? "Hide details ▴" : "Details ▾"}
-        </button>
-      </footer>
+      {!printView && (
+        <footer className="mt-3 border-t border-slate-100 pt-2 print:hidden">
+          <button
+            type="button"
+            onClick={onToggle}
+            aria-expanded={expanded}
+            aria-controls={bodyId}
+            className="text-sm text-slate-500 transition hover:text-slate-800"
+          >
+            {expanded ? "Hide details ▴" : "Details ▾"}
+          </button>
+        </footer>
+      )}
     </article>
   );
 }

@@ -9,7 +9,13 @@ import { ClaimTimeline } from "./ClaimTimeline";
 import { StatusFilter, type FilterValue } from "./StatusFilter";
 import { StatusSummary } from "./StatusSummary";
 
-export function ReportView({ report }: { report: CandidateReport }) {
+export function ReportView({
+  report,
+  printView = false,
+}: {
+  report: CandidateReport;
+  printView?: boolean;
+}) {
   const views = useMemo(() => buildClaimViews(report), [report]);
   const [filter, setFilter] = useState<FilterValue>("all");
   const [openId, setOpenId] = useState<string | null>(null);
@@ -38,17 +44,19 @@ export function ReportView({ report }: { report: CandidateReport }) {
 
   return (
     <div className="space-y-6">
-      <StatusSummary counts={counts} />
-      <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
-        <StatusFilter value={filter} onChange={setFilter} counts={counts} total={views.length} />
-        <button
-          type="button"
-          onClick={() => setExpandedIds(allExpanded ? [] : views.map((v) => v.claim.id))}
-          className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 transition hover:border-slate-500"
-        >
-          {allExpanded ? "Collapse all" : "Expand all"}
-        </button>
-      </div>
+      <StatusSummary counts={counts} printView={printView} />
+      {!printView && (
+        <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
+          <StatusFilter value={filter} onChange={setFilter} counts={counts} total={views.length} />
+          <button
+            type="button"
+            onClick={() => setExpandedIds(allExpanded ? [] : views.map((v) => v.claim.id))}
+            className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 transition hover:border-slate-500"
+          >
+            {allExpanded ? "Collapse all" : "Expand all"}
+          </button>
+        </div>
+      )}
       <div className="space-y-4">
         {visible.length === 0 ? (
           <p className="rounded-lg border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">
@@ -59,7 +67,8 @@ export function ReportView({ report }: { report: CandidateReport }) {
             <ClaimCard
               key={v.claim.id}
               view={v}
-              expanded={expandedIds.includes(v.claim.id)}
+              expanded={printView || expandedIds.includes(v.claim.id)}
+              printView={printView}
               onToggle={() => toggle(v.claim.id)}
               onOpenTimeline={(trigger) => {
                 triggerRef.current = trigger;
@@ -69,7 +78,7 @@ export function ReportView({ report }: { report: CandidateReport }) {
           ))
         )}
       </div>
-      {open && <ClaimTimeline view={open} onClose={closeTimeline} />}
+      {!printView && open && <ClaimTimeline view={open} onClose={closeTimeline} />}
     </div>
   );
 }

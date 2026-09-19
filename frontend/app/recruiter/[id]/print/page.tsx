@@ -1,0 +1,47 @@
+import type { Metadata } from "next";
+import { DecisionSupportBanner } from "@/components/report/DecisionSupportBanner";
+import { ReportView } from "@/components/report/ReportView";
+import { getReport, wantedSource } from "@/lib/report";
+
+export const dynamic = "force-dynamic";
+
+// The tab title becomes the suggested file name in Save as PDF.
+export async function generateMetadata({
+  params,
+  searchParams,
+}: PageProps<"/recruiter/[id]/print">): Promise<Metadata> {
+  const { id } = await params;
+  const { source: raw } = await searchParams;
+  const { report } = await getReport(id, wantedSource(raw));
+  return { title: `ClaimProof report - ${report.candidate_id} - ${report.role_title}` };
+}
+
+// A read-only view of the whole report: every card expanded, no controls.
+// The PDF control opens this in a new tab, so no print dialog appears.
+export default async function PrintReport({
+  params,
+  searchParams,
+}: PageProps<"/recruiter/[id]/print">) {
+  const { id } = await params;
+  const { source: raw } = await searchParams;
+  const { report, source } = await getReport(id, wantedSource(raw));
+
+  return (
+    <main className="mx-auto w-full max-w-3xl space-y-6 bg-white px-4 py-8">
+      <p className="text-xs text-slate-500 print:hidden">
+        Print-ready view. Press Cmd+P to save as PDF.
+      </p>
+      <header className="space-y-1">
+        <h1 className="text-2xl font-semibold text-slate-900">Claim evidence report</h1>
+        <p className="text-sm text-slate-600">
+          Candidate <span className="font-mono">{report.candidate_id}</span> · {report.role_title}
+        </p>
+        <p className="text-xs text-slate-500">
+          Data source: {source === "api" ? "live API" : "demo fixture"}
+        </p>
+      </header>
+      <DecisionSupportBanner />
+      <ReportView report={report} printView />
+    </main>
+  );
+}
