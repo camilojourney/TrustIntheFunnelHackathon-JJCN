@@ -3,6 +3,7 @@ backend/__pycache__/
 backend/**/__pycache__/
 backend/claimproof.db
 .env
+.env.local
 .venv/
 *.db
 __pycache__/
