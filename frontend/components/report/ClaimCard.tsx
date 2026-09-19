@@ -1,11 +1,13 @@
 "use client";
 
 import type { ClaimView } from "@/lib/join";
+import { worstOutcome } from "@/lib/consistency";
 import { cx } from "@/lib/cx";
 import { STATUS_META } from "@/lib/status";
 import { splitLead } from "@/lib/summarize";
 import { AnswerBlock, QuestionBlock } from "./Exchange";
 import { EvidenceList } from "./EvidenceList";
+import { OutcomeBadge } from "./OutcomeBadge";
 import { StatusBadge } from "./StatusBadge";
 
 // Shared with ClaimDetailsModal, so the card body and the modal body cannot
@@ -53,9 +55,11 @@ export function ClaimCard({
   onOpenTimeline: (trigger: HTMLElement) => void;
   printView?: boolean;
 }) {
-  const { claim, exchanges, evidence, assessment } = view;
+  const { claim, exchanges, evidence, assessment, checks } = view;
   const external = evidence.filter((e) => e.type === "external_artifact");
   const other = evidence.filter((e) => e.type !== "external_artifact");
+  // Second, quieter chip: what sources showed. Never recolors the interview status.
+  const sourceOutcome = worstOutcome(checks);
   const bodyId = `claim-body-${claim.id}`;
 
   // The card is one height on screen: Details opens a modal, the card never
@@ -98,8 +102,9 @@ export function ClaimCard({
             {claim.statement}
           </h3>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
           <StatusBadge status={assessment.status} withInfo={!printView} printView={printView} />
+          {sourceOutcome && <OutcomeBadge outcome={sourceOutcome} prefix="Sources" printView={printView} />}
           {!printView && (
             <button
               type="button"

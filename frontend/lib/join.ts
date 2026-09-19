@@ -2,6 +2,7 @@ import type {
   CandidateReport,
   Claim,
   ClaimAssessment,
+  ConsistencyCheck,
   EvidenceItem,
   InterviewAnswer,
   InterviewQuestion,
@@ -14,6 +15,8 @@ export type ClaimView = {
   exchanges: Exchange[];
   evidence: EvidenceItem[];
   assessment: ClaimAssessment;
+  // Source checks linked to this claim; empty when no scan has run.
+  checks: ConsistencyCheck[];
 };
 
 // Joins the flat report into one view per claim. A claim with no assessment
@@ -37,6 +40,7 @@ export function buildClaimViews(report: CandidateReport): ClaimView[] {
     const evidence = report.evidence.filter(
       (e) => e.claim_id === claim.id || assessment.evidence_ids.includes(e.id),
     );
-    return { claim, exchanges, evidence, assessment };
+    const checks = report.consistency?.checks.filter((c) => c.claim_id === claim.id) ?? [];
+    return { claim, exchanges, evidence, assessment, checks };
   });
 }

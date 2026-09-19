@@ -4,8 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
-from app import schemas
+from app import config, schemas
 from app.db import get_db
+from app.services.consistency import attach_consistency, run_consistency_scan
 from app.llm.client import LLMOutputError, get_llm_client
 from app.models import AnswerModel, AssessmentModel, InterviewModel, QuestionModel
 from app.routes.applications import find_claim, find_role_title
@@ -223,9 +224,17 @@ def complete_interview(interview_id: str, db: Session = Depends(get_db)) -> sche
     record_event(db, "assessment_generation", candidate_id, interview_id,
                  claim_ids=[a.claim_id for a in assessments])
 
+    # Refresh the source checks now that answers exist. Fixture sources only in
+    # DEMO_MODE; a failed scan leaves the interview report intact.
+    try:
+        run_consistency_scan(candidate_id, db, mode="fixture" if config.DEMO_MODE else "live")
+    except Exception:
+        db.rollback()
+        record_event(db, "consistency_scan", candidate_id, interview_id, status="unavailable")
+
     role_title = find_role_title(candidate_id, db)
 
-    return schemas.CandidateReport(
+    report = schemas.CandidateReport(
         session_id=session_context.get() or interview_id,
         candidate_id=candidate_id,
         role_title=role_title,
@@ -235,6 +244,7 @@ def complete_interview(interview_id: str, db: Session = Depends(get_db)) -> sche
         evidence=all_evidence,
         assessments=assessments,
     )
+    return attach_consistency(report, db)
 
 
 @router.get("/api/candidates/{candidate_id}/report", response_model=schemas.CandidateReport)
@@ -279,7 +289,7 @@ def get_report(candidate_id: str, db: Session = Depends(get_db)) -> schemas.Cand
 
     role_title = find_role_title(candidate_id, db)
 
-    return schemas.CandidateReport(
+    report = schemas.CandidateReport(
         session_id=last_trace.session_id if last_trace else None,
         candidate_id=candidate_id,
         role_title=role_title,
@@ -289,3 +299,4 @@ def get_report(candidate_id: str, db: Session = Depends(get_db)) -> schemas.Cand
         evidence=all_evidence,
         assessments=assessments,
     )
+    return attach_consistency(report, db)

@@ -1,11 +1,13 @@
 import json
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
 from sqlalchemy.orm import Session
 
-from app.models import (CandidateModel, ClaimModel, ApplicationModel, InterviewModel,
+from app.models import (CandidateModel, ClaimModel, ApplicationModel, ConsistencyCheckModel, InterviewModel,
                         QuestionModel, AnswerModel, EvidenceModel, AssessmentModel, TraceEventModel)
+from app.services.identity import extract_identity_hints
 
 FIXTURES_DIR = Path(__file__).resolve().parent.parent / "fixtures"
 
@@ -22,6 +24,7 @@ def reset_demo_state(db: Session) -> dict[str, Any]:
     for model in (AnswerModel, AssessmentModel, QuestionModel):
         db.query(model).filter(model.interview_id.in_(select(interviews))).delete(synchronize_session=False)
     db.query(EvidenceModel).filter(EvidenceModel.claim_id.in_(select(claim_ids))).delete(synchronize_session=False)
+    db.query(ConsistencyCheckModel).filter_by(candidate_id=candidate_id).delete()
     db.query(InterviewModel).filter_by(candidate_id=candidate_id).delete()
     db.query(ApplicationModel).filter_by(candidate_id=candidate_id).delete()
     db.query(TraceEventModel).filter_by(candidate_id=candidate_id).delete()
@@ -43,6 +46,21 @@ def reset_demo_state(db: Session) -> dict[str, Any]:
                 statement=claim["statement"],
                 importance=claim["importance"],
                 entities=claim["entities"],
+            )
+        )
+    # Earlier fictional applications give the consistency scan an application
+    # history and a name variant to link. The current application is added by
+    # the applications route.
+    now = datetime.now(timezone.utc)
+    for prior in candidate.get("prior_applications", []):
+        db.add(
+            ApplicationModel(
+                id=prior["id"],
+                candidate_id=candidate_id,
+                resume_text=prior["resume_text"],
+                role_title=prior["role_title"],
+                created_at=(now - timedelta(days=prior.get("days_before", 0))).isoformat(),
+                identity_hints=extract_identity_hints(prior["resume_text"]),
             )
         )
     db.commit()

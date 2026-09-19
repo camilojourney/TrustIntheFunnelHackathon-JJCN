@@ -10,10 +10,17 @@ from app import schemas
 from app.db import get_db
 from app.llm.client import LLMOutputError, get_llm_client
 from app.models import ApplicationModel, CandidateModel, ClaimModel
+from app.services.identity import extract_identity_hints
 from app.services.seed import FIXTURES_DIR, reset_demo_state
 from app.services.tracing import record_event
 
 router = APIRouter()
+
+
+def _now() -> str:
+    from datetime import datetime, timezone
+
+    return datetime.now(timezone.utc).isoformat()
 
 _SYSTEM_PROMPT = (
     "You extract structured, testable claims from a candidate's resume text. "
@@ -72,7 +79,9 @@ def create_application(
         if db.get(ApplicationModel, application_id) is None:
             db.add(
                 ApplicationModel(
-                    id=application_id, candidate_id=candidate_id, resume_text=state["resume_text"]
+                    id=application_id, candidate_id=candidate_id, resume_text=state["resume_text"],
+                    role_title=state["role_title"], created_at=_now(),
+                    identity_hints=extract_identity_hints(state["resume_text"]),
                 )
             )
         db.commit()
@@ -83,10 +92,12 @@ def create_application(
 
     candidate_id = f"candidate-{uuid.uuid4().hex[:8]}"
     application_id = f"application-{uuid.uuid4().hex[:8]}"
+    resume_text = payload.resume_text or ""
     db.add(CandidateModel(candidate_id=candidate_id, role_title=""))
     db.add(
         ApplicationModel(
-            id=application_id, candidate_id=candidate_id, resume_text=payload.resume_text or ""
+            id=application_id, candidate_id=candidate_id, resume_text=resume_text,
+            role_title="", created_at=_now(), identity_hints=extract_identity_hints(resume_text),
         )
     )
     db.commit()

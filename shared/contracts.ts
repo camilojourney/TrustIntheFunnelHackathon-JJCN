@@ -48,6 +48,46 @@ export type ClaimAssessment = {
   unresolved_questions: string[];
 };
 
+// Source-consistency layer. Additive and optional: a report without it is
+// still a complete interview report. Outcomes describe what a source showed
+// relative to the claim text; `aligned` never means authorship or truth.
+export type CheckOutcome = "aligned" | "conflict" | "not_found" | "unavailable" | "insufficient";
+
+export type CheckKind =
+  | "technical_relevance"
+  | "application_history"
+  | "identity_aliases"
+  | "education_web"
+  | "github_project"
+  | "numeric_source_check";
+
+export type ConsistencyCheck = {
+  id: string;
+  candidate_id: string;
+  // Absent for person-level checks (applications, aliases).
+  claim_id?: string | null;
+  kind: CheckKind;
+  outcome: CheckOutcome;
+  summary: string;
+  source_label: string;
+  source_url?: string | null;
+  excerpt?: string | null;
+  limitations: string;
+  recruiter_questions: string[];
+  mode: "fixture" | "live" | "local";
+  created_at: string;
+};
+
+export type ConsistencyCoverage = Record<CheckOutcome, number>;
+
+export type ConsistencyProfile = {
+  candidate_id: string;
+  generated_at: string;
+  // Counts of checks by outcome. Not a candidate score.
+  coverage: ConsistencyCoverage;
+  checks: ConsistencyCheck[];
+};
+
 export type CandidateReport = {
   session_id?: string | null;
   candidate_id: string;
@@ -57,4 +97,5 @@ export type CandidateReport = {
   answers: InterviewAnswer[];
   evidence: EvidenceItem[];
   assessments: ClaimAssessment[];
+  consistency?: ConsistencyProfile | null;
 };

@@ -8,6 +8,7 @@ import { STATUSES, type Status } from "@/lib/status";
 import { ClaimCard } from "./ClaimCard";
 import { ClaimDetailsModal } from "./ClaimDetailsModal";
 import { ClaimTimeline } from "./ClaimTimeline";
+import { ConsistencyPanel } from "./ConsistencyPanel";
 import { StatusFilter, type FilterValue } from "./StatusFilter";
 import { StatusSummary } from "./StatusSummary";
 
@@ -65,6 +66,7 @@ export function ReportView({
         </details>
       )}
       <StatusSummary counts={counts} printView={printView} />
+      <ConsistencyPanel profile={report.consistency} claims={report.claims} printView={printView} />
       {!printView && (
         <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
           <StatusFilter value={filter} onChange={setFilter} counts={counts} total={views.length} />

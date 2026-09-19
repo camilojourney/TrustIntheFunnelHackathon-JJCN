@@ -48,4 +48,4 @@ npm run test:e2e
 
 The browser suite uses installed Google Chrome and starts isolated test servers. Against an already running DEMO_MODE backend, run `.venv/bin/python integrations/smoke.py`; this resets only the fictional demo candidate and leaves a fresh report for inspection.
 
-See [Person 4 integration and demo script](docs/person4-integration.md) for exact interfaces, scope, and sponsor status. Solari/PRISM are not connected; local traces and controlled evidence fixtures work without them. This local hackathon demo has no authentication or production deployment.
+See [Person 4 integration and demo script](docs/person4-integration.md) for exact interfaces, scope, and sponsor status, and [the source-consistency layer](docs/consistency-layer.md) for the recruiter dossier that sits beside the interview statuses. Solari/PRISM are not connected; local traces and controlled evidence fixtures work without them. This local hackathon demo has no authentication or production deployment.

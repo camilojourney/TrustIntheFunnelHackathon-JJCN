@@ -16,6 +16,9 @@ class ApplicationModel(Base):
     id = Column(String, primary_key=True)
     candidate_id = Column(String, ForeignKey("candidates.candidate_id"), nullable=False)
     resume_text = Column(Text, default="")
+    role_title = Column(String, nullable=True)
+    created_at = Column(String, nullable=True)
+    identity_hints = Column(JSON, nullable=True)
 
 
 class ClaimModel(Base):
@@ -85,6 +88,24 @@ class AssessmentModel(Base):
     rationale = Column(Text, nullable=False)
     evidence_ids = Column(JSON, default=list)
     unresolved_questions = Column(JSON, default=list)
+
+
+class ConsistencyCheckModel(Base):
+    __tablename__ = "consistency_checks"
+
+    id = Column(String, primary_key=True)
+    candidate_id = Column(String, ForeignKey("candidates.candidate_id"), index=True, nullable=False)
+    claim_id = Column(String, ForeignKey("claims.id"), nullable=True)
+    kind = Column(String, nullable=False)
+    outcome = Column(String, nullable=False)
+    summary = Column(Text, nullable=False)
+    source_label = Column(String, nullable=False)
+    source_url = Column(String, nullable=True)
+    excerpt = Column(Text, nullable=True)
+    limitations = Column(Text, nullable=False)
+    recruiter_questions = Column(JSON, default=list)
+    mode = Column(String, nullable=False)
+    created_at = Column(String, nullable=False)
 
 
 class TraceEventModel(Base):

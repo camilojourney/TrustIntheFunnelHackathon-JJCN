@@ -207,7 +207,8 @@
       ],
       "unresolved_questions": [
         "How does the system recover in-flight work when a worker fails?",
-        "What triggers autoscaling, and who configured it?"
+        "What triggers autoscaling, and who configured it?",
+        "Ask for the specifics still missing: failure recovery of in-flight work and what triggers scaling, with one concrete incident."
       ]
     },
     {
@@ -220,8 +221,187 @@
       "unresolved_questions": [
         "What was the baseline throughput, and on what hardware?",
         "What batch size and request load were used before and after?",
-        "Is there a benchmark log or dashboard that a human reviewer can check?"
+        "Is there a benchmark log or dashboard that a human reviewer can check?",
+        "Which repository, benchmark, or document supports “Improved inference throughput by 10x.”? Ask for the before/after artifact.",
+        "Which benchmark, log, or dashboard produced the 10× figure? Ask for the before and after measurements and their conditions.",
+        "Ask for the specifics still missing: baseline throughput, hardware, batch size, and how the before/after runs were measured."
       ]
     }
-  ]
+  ],
+  "consistency": {
+    "candidate_id": "demo-candidate-1",
+    "generated_at": "2026-09-19T15:12:00Z",
+    "coverage": {
+      "aligned": 5,
+      "conflict": 0,
+      "not_found": 2,
+      "unavailable": 0,
+      "insufficient": 3
+    },
+    "checks": [
+      {
+        "id": "check-01",
+        "candidate_id": "demo-candidate-1",
+        "claim_id": null,
+        "kind": "application_history",
+        "outcome": "aligned",
+        "summary": "2 applications on record: Data Engineer (2026-09-07); Machine Learning Engineer (2026-09-19).",
+        "source_label": "Stored application records",
+        "source_url": null,
+        "excerpt": null,
+        "limitations": "Application volume is context, not a signal about honesty or fit. ATS duplicates, internal transfers, and career changes all inflate it.",
+        "recruiter_questions": [
+          "2 applications were filed 12 days apart (Data Engineer, Machine Learning Engineer). They share 3 identical resume bullets. Confirm they are the same person and which role they are pursuing; applying more than once is not a concern by itself."
+        ],
+        "mode": "local",
+        "created_at": "2026-09-19T15:12:00Z"
+      },
+      {
+        "id": "check-02",
+        "candidate_id": "demo-candidate-1",
+        "claim_id": null,
+        "kind": "identity_aliases",
+        "outcome": "aligned",
+        "summary": "3 identifiers are compatible variants of one person: A. Rivera, Alex Rivera, arivera-ml.",
+        "source_label": "Names, emails, and handles in the applications",
+        "source_url": null,
+        "excerpt": "A. Rivera, Alex Rivera, arivera-ml",
+        "limitations": "Name variants, nicknames, initials, and transliterations are normal. Aliases exist for record linkage only and must not be read as a risk signal.",
+        "recruiter_questions": [],
+        "mode": "local",
+        "created_at": "2026-09-19T15:12:00Z"
+      },
+      {
+        "id": "check-03",
+        "candidate_id": "demo-candidate-1",
+        "claim_id": null,
+        "kind": "education_web",
+        "outcome": "insufficient",
+        "summary": "The application states “B.S. in Computer Science.” without naming an institution, so no public source can be checked.",
+        "source_label": "Application text",
+        "source_url": null,
+        "excerpt": "B.S. in Computer Science.",
+        "limitations": "Public web pages do not confirm enrollment or graduation. Use a registry or transcript for verification.",
+        "recruiter_questions": [
+          "Which institution granted the “B.S. in Computer Science”, and in what year?",
+          "Can the candidate provide a transcript or a registry/clearinghouse verification?"
+        ],
+        "mode": "local",
+        "created_at": "2026-09-19T15:12:00Z"
+      },
+      {
+        "id": "check-04",
+        "candidate_id": "demo-candidate-1",
+        "claim_id": "claim-rag-pipeline",
+        "kind": "github_project",
+        "outcome": "aligned",
+        "summary": "arivera-ml/hybrid-rag mentions Neo4j, RAG, vector retrieval, F1, evaluation queries. Language: Python; topics: rag, neo4j, faiss, retrieval; not a fork; created 2025-11-02; last push 2026-08-30.",
+        "source_label": "GitHub: arivera-ml/hybrid-rag",
+        "source_url": "https://github.com/arivera-ml/hybrid-rag",
+        "excerpt": "# hybrid-rag\n\nHybrid retrieval over Neo4j and a FAISS vector index for RAG. Entities and relations are stored in Neo4j; semantic matches come from vector retrieval; results are merged and re-ranked.\n\n## Evaluation\n\n200 labelled evaluation queries. Token-level F1: vector-only 61.30, hybrid 64.05 (+2.75 points). Indexing latency increased because of dual writes.\n\nThis is a fictional demo repository.",
+        "limitations": "Public metadata and README text only. Artifact existence does not prove candidate authorship. Reported figures were not reproduced.",
+        "recruiter_questions": [],
+        "mode": "fixture",
+        "created_at": "2026-09-19T15:12:00Z"
+      },
+      {
+        "id": "check-05",
+        "candidate_id": "demo-candidate-1",
+        "claim_id": "claim-inference-throughput",
+        "kind": "github_project",
+        "outcome": "not_found",
+        "summary": "No linked repository mentions inference throughput, 10x; checked arivera-ml/hybrid-rag. Language: Python; topics: rag, neo4j, faiss, retrieval; not a fork; created 2025-11-02; last push 2026-08-30.",
+        "source_label": "GitHub: arivera-ml/hybrid-rag",
+        "source_url": "https://github.com/arivera-ml/hybrid-rag",
+        "excerpt": "# hybrid-rag\n\nHybrid retrieval over Neo4j and a FAISS vector index for RAG. Entities and relations are stored in Neo4j; semantic matches come from vector retrieval; results are merged and re-ranked.\n\n## Evaluation\n\n200 labelled evaluation queries. Token-level F1: vector-only 61.30, hybrid 64.05 (+2.75 points). Indexing latency increased because of dual writes.\n\nThis is a fictional demo repository.",
+        "limitations": "Public metadata and README text only. Artifact existence does not prove candidate authorship. Reported figures were not reproduced.",
+        "recruiter_questions": [
+          "Which repository, benchmark, or document supports “Improved inference throughput by 10x.”? Ask for the before/after artifact."
+        ],
+        "mode": "fixture",
+        "created_at": "2026-09-19T15:12:00Z"
+      },
+      {
+        "id": "check-06",
+        "candidate_id": "demo-candidate-1",
+        "claim_id": "claim-rag-pipeline",
+        "kind": "numeric_source_check",
+        "outcome": "aligned",
+        "summary": "Source figures 61.3 → 64.05 give 2.75 points, matching the claimed 2.75 points.",
+        "source_label": "Synthetic demo artifact (fixture; not live-collected)",
+        "source_url": "/demo-artifact",
+        "excerpt": "Hybrid retrieval over Neo4j and a vector index. Evaluation: 200 labelled queries. F1: vector-only 61.30, hybrid 64.05.",
+        "limitations": "Arithmetic on figures quoted in a source. Matching numbers do not show the experiment was run, that conditions were comparable, or that the work was the candidate's own.",
+        "recruiter_questions": [],
+        "mode": "local",
+        "created_at": "2026-09-19T15:12:00Z"
+      },
+      {
+        "id": "check-07",
+        "candidate_id": "demo-candidate-1",
+        "claim_id": "claim-inference-throughput",
+        "kind": "numeric_source_check",
+        "outcome": "not_found",
+        "summary": "The claim states 10×, but no source with figures has been collected for it.",
+        "source_label": "No numeric source collected",
+        "source_url": null,
+        "excerpt": null,
+        "limitations": "Arithmetic on figures quoted in a source. Matching numbers do not show the experiment was run, that conditions were comparable, or that the work was the candidate's own.",
+        "recruiter_questions": [
+          "Which benchmark, log, or dashboard produced the 10× figure? Ask for the before and after measurements and their conditions."
+        ],
+        "mode": "local",
+        "created_at": "2026-09-19T15:12:00Z"
+      },
+      {
+        "id": "check-08",
+        "candidate_id": "demo-candidate-1",
+        "claim_id": "claim-rag-pipeline",
+        "kind": "technical_relevance",
+        "outcome": "aligned",
+        "summary": "Both answers engaged the claim's terms: F1, Neo4j, RAG, evaluation queries, vector retrieval.",
+        "source_label": "Interview transcripts",
+        "source_url": null,
+        "excerpt": "Vector search alone missed multi-hop questions, for example which supplier ships a part used in a given product. So I kept entities and relations in Neo4j and used Cypher expansion from the entities found in the query, then merged those results with the top-k vector hits and re-ranked them. I built ",
+        "limitations": "Judges answer content against the claim's terms only. No tone, fluency, pace, accent, or delivery signals are used.",
+        "recruiter_questions": [],
+        "mode": "local",
+        "created_at": "2026-09-19T15:12:00Z"
+      },
+      {
+        "id": "check-09",
+        "candidate_id": "demo-candidate-1",
+        "claim_id": "claim-aws-service",
+        "kind": "technical_relevance",
+        "outcome": "insufficient",
+        "summary": "Answers mentioned AWS; the candidate said they were unsure about part of it (queue retry settings and the autoscaling trigger).",
+        "source_label": "Interview transcripts",
+        "source_url": null,
+        "excerpt": "It was an API on EC2 behind a load balancer. Files went to S3 and the slow jobs went through a queue to worker instances. If an instance fails, the load balancer stops sending traffic to it.",
+        "limitations": "Judges answer content against the claim's terms only. No tone, fluency, pace, accent, or delivery signals are used.",
+        "recruiter_questions": [
+          "Ask for the specifics still missing: failure recovery of in-flight work and what triggers scaling, with one concrete incident."
+        ],
+        "mode": "local",
+        "created_at": "2026-09-19T15:12:00Z"
+      },
+      {
+        "id": "check-10",
+        "candidate_id": "demo-candidate-1",
+        "claim_id": "claim-inference-throughput",
+        "kind": "technical_relevance",
+        "outcome": "insufficient",
+        "summary": "Answers mentioned inference throughput and 10x; the candidate did not remember the baseline, batch size, or load.",
+        "source_label": "Interview transcripts",
+        "source_url": null,
+        "excerpt": "It was a lot faster after I optimized it. Before, it was slow, and after it handled about ten times more. I do not remember the exact numbers.",
+        "limitations": "Judges answer content against the claim's terms only. No tone, fluency, pace, accent, or delivery signals are used.",
+        "recruiter_questions": [
+          "Ask for the specifics still missing: baseline throughput, hardware, batch size, and how the before/after runs were measured."
+        ],
+        "mode": "local",
+        "created_at": "2026-09-19T15:12:00Z"
+      }
+    ]
+  }
 }

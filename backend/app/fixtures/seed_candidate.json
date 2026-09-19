@@ -1,5 +1,13 @@
 {
   "candidate_id": "demo-candidate-1",
   "role_title": "Machine Learning Engineer",
-  "resume_text": "Jordan Rivera - Machine Learning Engineer\n\nProjects:\n- Built a hybrid Neo4j and vector RAG pipeline that improved F1 by 2.75 percentage points across 200 evaluation queries.\n\nEmployment:\n- Deployed a fault-tolerant cloud service on AWS.\n- Improved inference throughput by 10x.\n\nEducation:\n- B.S. in Computer Science.\n\nSkills:\n- Python, PyTorch, Neo4j, FAISS, AWS."
+  "resume_text": "Alex Rivera - Machine Learning Engineer\nGitHub: https://github.com/arivera-ml/hybrid-rag\n\nProjects:\n- Built a hybrid Neo4j and vector RAG pipeline that improved F1 by 2.75 percentage points across 200 evaluation queries.\n\nEmployment:\n- Deployed a fault-tolerant cloud service on AWS.\n- Improved inference throughput by 10x.\n\nEducation:\n- B.S. in Computer Science.\n\nSkills:\n- Python, PyTorch, Neo4j, FAISS, AWS.",
+  "prior_applications": [
+    {
+      "id": "application-demo-candidate-1-prior",
+      "role_title": "Data Engineer",
+      "days_before": 12,
+      "resume_text": "A. Rivera - Data Engineer\nGitHub: https://github.com/arivera-ml/hybrid-rag\n\nProjects:\n- Built a hybrid Neo4j and vector RAG pipeline that improved F1 by 2.75 percentage points across 200 evaluation queries.\n\nEmployment:\n- Deployed a fault-tolerant cloud service on AWS.\n\nEducation:\n- B.S. in Computer Science.\n\nSkills:\n- Python, SQL, Airflow, Neo4j, AWS."
+    }
+  ]
 }

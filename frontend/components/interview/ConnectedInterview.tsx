@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import type { CandidateReport, Claim, EvidenceItem, InterviewQuestion } from "@shared/contracts";
+import type { CandidateReport, Claim, ConsistencyProfile, EvidenceItem, InterviewQuestion } from "@shared/contracts";
 import fixture from "@fixtures/report.json";
 import { api } from "@/lib/session-api";
 import { SageInterviewView } from "./SageInterviewView";
@@ -11,6 +11,8 @@ export type Session = {
   id: string; mode: "live" | "offline"; candidate: string; interview: string;
   claims: Claim[]; question: InterviewQuestion | null; report?: CandidateReport;
   questions: InterviewQuestion[]; answers: CandidateReport["answers"]; evidence: EvidenceItem[]; events: Event[];
+  // Sources the scan will inspect, shown to the candidate before the interview.
+  consistency?: ConsistencyProfile | null;
 };
 const sampleAnswers: Record<string, string> = {
   "claim-rag-pipeline": "I used Neo4j for the RAG pipeline.",
@@ -20,6 +22,13 @@ const sampleAnswers: Record<string, string> = {
 const ragFollowup = "Neo4j supplied graph relationships while vector retrieval found semantic matches for RAG. Across 200 evaluation queries, F1 improved by 2.75 percentage points. Dual writes increased indexing latency, so I would batch updates and rerun the evaluation.";
 function event(stage: string, details: Record<string, unknown> = {}): Event {
   return { id: crypto.randomUUID(), stage, status: "ok", created_at: new Date().toISOString(), details };
+}
+function offlineConsistency(profile: ConsistencyProfile | null | undefined): ConsistencyProfile | null {
+  if (!profile) return null;
+  const checks = profile.checks.filter(c => c.kind !== "technical_relevance").map(c => ({ ...c, mode: "fixture" as const }));
+  const coverage = { aligned: 0, conflict: 0, not_found: 0, unavailable: 0, insufficient: 0 };
+  for (const c of checks) coverage[c.outcome] += 1;
+  return { ...profile, generated_at: new Date().toISOString(), coverage, checks };
 }
 function offlineQuestion(claim: Claim): InterviewQuestion {
   return { id: crypto.randomUUID(), claim_id: claim.id, kind: "opening", text: `Walk through how you accomplished: ${claim.statement}`, intent: "Explain the mechanism, measurement, and limitations." };
@@ -61,17 +70,28 @@ export function ConnectedInterview() {
       const id = crypto.randomUUID();
       let claims = structuredClone(fixture.claims) as Claim[];
       let interview = "offline";
+      let consistency: ConsistencyProfile | null = structuredClone(fixture.consistency) as ConsistencyProfile;
+      const events: Event[] = [event("claim_extraction")];
       if (mode === "live") {
         const app = await api<{ application_id: string }>("applications", id, { use_seed: true });
         claims = await api<Claim[]>(`applications/${app.application_id}/extract-claims`, id, {});
+        // The source scan is best-effort: a backend without fixtures or a failed
+        // collector must not block the interview. Nothing is invented on failure.
+        try {
+          consistency = await api<ConsistencyProfile>("candidates/demo-candidate-1/consistency-scan", id, { mode: "fixture" });
+          events.push(event("consistency_scan", { checks: consistency.checks.length }));
+        } catch {
+          consistency = null;
+          events.push({ ...event("consistency_scan"), status: "unavailable" });
+        }
         const created = await api<{ interview_id: string }>("interviews", id, { candidate_id: "demo-candidate-1", claim_ids: claims.map(c => c.id) });
         interview = created.interview_id;
       }
       const question = mode === "live"
         ? (await api<{ question: InterviewQuestion }>(`interviews/${interview}/next-question`, id)).question
         : offlineQuestion(claims[0]);
-      save({ id, mode, candidate: "demo-candidate-1", interview, claims, question, questions: [question], answers: [], evidence: [],
-        events: [event("claim_extraction"), event("question_generation", { claim_id: question.claim_id })] });
+      events.push(event("question_generation", { claim_id: question.claim_id }));
+      save({ id, mode, candidate: "demo-candidate-1", interview, claims, question, questions: [question], answers: [], evidence: [], consistency, events });
       setNotice(mode === "offline" ? "Offline rehearsal: answers stay in this browser. Assessments remain unresolved until reviewed." : "Connected to the backend. DEMO_MODE uses deterministic model fixtures.");
     });
   }
@@ -100,7 +120,9 @@ export function ConnectedInterview() {
           question = { ...q, id: crypto.randomUUID(), kind: "follow_up", text: `Could you explain ${focus}, with one concrete example?`, intent: "Clarify a detail from the submitted answer." };
         } else if (index + 1 < session.claims.length) question = offlineQuestion(session.claims[index + 1]);
         else report = { candidate_id: session.candidate, role_title: fixture.role_title, claims: session.claims, questions: session.questions, answers, evidence: session.evidence,
-          assessments: session.claims.map(c => ({ claim_id: c.id, status: "unresolved", rationale: "Offline rehearsal: answers were recorded but have not been assessed. Human review is required.", evidence_ids: session.evidence.filter(e => e.claim_id === c.id).map(e => e.id), unresolved_questions: ["Review the recorded explanation and supporting evidence."] })) };
+          assessments: session.claims.map(c => ({ claim_id: c.id, status: "unresolved", rationale: "Offline rehearsal: answers were recorded but have not been assessed. Human review is required.", evidence_ids: session.evidence.filter(e => e.claim_id === c.id).map(e => e.id), unresolved_questions: ["Review the recorded explanation and supporting evidence."] })),
+          // Offline rehearsal cannot inspect sources; only the fixture's non-interview checks carry over, so no relevance is claimed for typed answers.
+          consistency: offlineConsistency(session.consistency) };
       }
       const events = [...session.events, event("answer_submission", { claim_id: q.claim_id }), event(question ? (question.kind === "follow_up" ? "follow_up_generation" : "question_generation") : "assessment_generation")];
       save({ ...session, question, questions: question ? [...session.questions, question] : session.questions, answers, report, events });

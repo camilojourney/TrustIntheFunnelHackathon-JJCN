@@ -33,6 +33,12 @@ test("connected interview attaches evidence, creates report and trace, and reset
   await page.getByRole("link", { name: "Open evidence report" }).click();
   await expect(page.getByRole("heading", { name: "Alex Rivera", exact: true })).toBeVisible();
   await expect(page.getByText("Live API not reachable")).toBeHidden();
+  // Source-consistency dossier sits beside the interview statuses without changing them.
+  const consistency = page.getByRole("region", { name: "Source consistency" });
+  await expect(consistency.getByRole("heading", { name: "Ask next" })).toBeVisible();
+  await expect(consistency.getByText("Which institution granted", { exact: false })).toBeVisible();
+  await expect(page.getByText("Sources: Aligned").first()).toBeVisible();
+  await expect(page.getByText("Sources: Insufficient").first()).toBeVisible();
   await page.getByRole("button", { name: "Your next step: No decision yet", exact: true }).click();
   await page.getByRole("menuitemradio", { name: "Advance to interview" }).click();
   await page.getByRole("button", { name: "Details", exact: true }).first().click();
@@ -60,6 +66,7 @@ test("connected interview attaches evidence, creates report and trace, and reset
   await page.getByRole("link", { name: "Open session execution trace" }).click();
   await expect(page.getByText("assessment generation", { exact: true })).toBeVisible();
   await expect(page.getByText("evidence collection", { exact: true })).toBeVisible();
+  await expect(page.getByText("consistency scan", { exact: true }).first()).toBeVisible();
   await page.getByRole("link", { name: "Back to candidate session" }).click();
   await page.getByRole("button", { name: "Reset demo" }).click();
   await expect(page.getByRole("button", { name: "Start connected demo" })).toBeVisible();

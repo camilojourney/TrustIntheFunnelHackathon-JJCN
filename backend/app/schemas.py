@@ -56,6 +56,55 @@ class ClaimAssessment(BaseModel):
     unresolved_questions: list[str]
 
 
+CheckOutcome = Literal["aligned", "conflict", "not_found", "unavailable", "insufficient"]
+CheckKind = Literal[
+    "technical_relevance",
+    "application_history",
+    "identity_aliases",
+    "education_web",
+    "github_project",
+    "numeric_source_check",
+]
+
+
+class ConsistencyCheck(BaseModel):
+    """One source-consistency observation. Never a verdict about the person.
+
+    `claim_id` is None for person-level checks (applications, aliases). The
+    outcome describes what the inspected source showed relative to the claim
+    text; `aligned` does not establish authorship, enrollment, or truth.
+    """
+
+    id: str
+    candidate_id: str
+    claim_id: str | None = None
+    kind: CheckKind
+    outcome: CheckOutcome
+    summary: str
+    source_label: str
+    source_url: str | None = None
+    excerpt: str | None = None
+    limitations: str
+    recruiter_questions: list[str]
+    mode: Literal["fixture", "live", "local"]
+    created_at: str
+
+
+class ConsistencyCoverage(BaseModel):
+    aligned: int = 0
+    conflict: int = 0
+    not_found: int = 0
+    unavailable: int = 0
+    insufficient: int = 0
+
+
+class ConsistencyProfile(BaseModel):
+    candidate_id: str
+    generated_at: str
+    coverage: ConsistencyCoverage
+    checks: list[ConsistencyCheck]
+
+
 class CandidateReport(BaseModel):
     session_id: str | None = None
     candidate_id: str
@@ -65,6 +114,7 @@ class CandidateReport(BaseModel):
     answers: list[InterviewAnswer]
     evidence: list[EvidenceItem]
     assessments: list[ClaimAssessment]
+    consistency: ConsistencyProfile | None = None
 
 
 class ApplicationCreateRequest(BaseModel):

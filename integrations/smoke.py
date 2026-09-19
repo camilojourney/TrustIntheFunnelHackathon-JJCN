@@ -36,8 +36,11 @@ def main():
     fetched = call(f"candidates/{application['candidate_id']}/report")
     assert fetched == report and len(report["claims"]) == 3
     assert evidence["id"] in {e["id"] for e in report["evidence"]}
+    consistency = report["consistency"]
+    assert consistency and consistency["checks"], "completed report should carry source-consistency checks"
+    assert all(check["limitations"] for check in consistency["checks"])
     events = call(f"traces/{session}")["events"]
-    assert {"claim_extraction", "follow_up_generation", "evidence_collection", "assessment_generation"} <= {e["stage"] for e in events}
+    assert {"claim_extraction", "follow_up_generation", "evidence_collection", "assessment_generation", "consistency_scan"} <= {e["stage"] for e in events}
     print(json.dumps({"result": "passed", "candidate_id": report["candidate_id"], "session_id": session, "trace_events": len(events), "report_url": f"/recruiter/{report['candidate_id']}?source=live&session={session}"}, indent=2))
 
 

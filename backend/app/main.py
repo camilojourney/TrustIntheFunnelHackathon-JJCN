@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.db import Base, engine
-from app.routes import applications, evidence, interviews, reports, reliability
+from app.db import Base, engine, ensure_columns
+from app.routes import applications, consistency, evidence, interviews, reports, reliability
 from app.services.tracing import session_context
 from uuid import uuid4
 import re
@@ -10,6 +10,7 @@ import re
 # Safety net: guarantees tables exist even if `alembic upgrade head` wasn't run,
 # matching this project's "deterministic demo fallback" philosophy.
 Base.metadata.create_all(bind=engine)
+ensure_columns(engine)
 
 app = FastAPI(title="ClaimProof Backend")
 
@@ -39,6 +40,7 @@ app.include_router(interviews.router)
 app.include_router(evidence.router)
 app.include_router(reports.router)
 app.include_router(reliability.router)
+app.include_router(consistency.router)
 
 
 @app.get("/health")
