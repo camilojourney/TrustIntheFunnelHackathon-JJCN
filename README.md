@@ -1,4 +1,4 @@
-# ClaimProof
+# Sage
 
 One integrated candidate → interview → evidence → recruiter-report demo, with local execution traces and an explicit offline fallback.
 
