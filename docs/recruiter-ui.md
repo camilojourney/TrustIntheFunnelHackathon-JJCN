@@ -90,6 +90,7 @@ Use the table. Never invent a one-off dark color.
 |---|---|
 | page `bg-slate-50` (the `--background` variable) | `dark:bg-slate-950` |
 | card / modal / drawer / pill `bg-white` | `dark:bg-slate-900` |
+| neutral next-step chip / subtle All pill `bg-slate-100` | `dark:bg-slate-800` |
 | `border-slate-200`, `border-slate-100` | `dark:border-slate-800` |
 | `border-slate-300` | `dark:border-slate-700` |
 | hover `border-slate-400/500` | `dark:hover:border-slate-500` |
@@ -128,6 +129,40 @@ Two rules that are easy to get wrong:
 `app/recruiter/[id]/loading.tsx` is the one file with no `dark:` class at all:
 it also streams into the print route. One rule in `globals.css`
 (`html.dark [aria-busy="true"] .animate-pulse`) darkens its bars on screen.
+
+## Queue filters and next steps
+
+Round 11 adds role pills directly above the queue. All is subtle and selected
+initially; a role filters the list, and a second click clears it. The smaller
+next-step filter row combines with the role filter. Each row keeps its counts
+on a separate line, with separate name/report links and a sibling control.
+
+### Your next step
+
+The queue and report share these human-selected values:
+
+| Value | Label |
+|---|---|
+| `none` | No decision yet |
+| `advance` | Advance to interview |
+| `hold` | Hold for more review |
+| `decline` | Not moving forward |
+
+The default is No decision yet. `localStorage["sage-next-step"]` holds
+`{ [candidateId]: { value, at } }`, with an ISO timestamp. Changes synchronize
+between queue and report in one tab and across tabs. This is browser only until
+the backend adds an endpoint. The report shows a 12-hour timestamp, browser-only
+notice, and Undo for the preceding choice made there. The menu supports arrow
+keys, Home/End, Escape, and outside clicks. Storage failures stay explicit.
+
+Every choice uses the same neutral chip: no choice gets its own color and no
+choice is recommended or inferred from assessment statuses. Otherwise the
+status colors beside the control could read as Sage's opinion. The report
+always says, "Sage does not recommend a next step. This records your choice."
+The choice and notice are hidden when printing and absent from the print route.
+
+Next owner: a real version needs `POST /api/candidates/{id}/next-step` from
+Person 1 and an audit trail.
 
 ## Candidates
 

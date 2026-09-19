@@ -4,6 +4,7 @@ import { DecisionSupportBanner } from "@/components/report/DecisionSupportBanner
 import { PrintButton } from "@/components/report/PrintButton";
 import { ReportView } from "@/components/report/ReportView";
 import { SourceToggle } from "@/components/report/SourceToggle";
+import { ReportNextStepControls } from "@/components/NextStepControl";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { candidateName } from "@/lib/candidates";
 import { getReport, wantedSource } from "@/lib/report";
@@ -39,14 +40,11 @@ export default async function RecruiterReport({
               Claim evidence report · {report.role_title}
             </p>
           </div>
-          {/* One row: Demo | Live, Print and PDF, then the theme button at the
-              far right. It never wraps in itself. */}
           <div className="flex flex-col items-end gap-1">
-            <div className="flex flex-nowrap items-center gap-2">
-              <SourceToggle id={id} active={onScreen} />
+            <ReportNextStepControls key={id} candidateId={id} sourceControl={<SourceToggle id={id} active={onScreen} />}>
               <PrintButton id={id} source={onScreen} />
               <ThemeToggle />
-            </div>
+            </ReportNextStepControls>
             {liveFailed && (
               <p className="text-xs text-amber-700 dark:text-amber-200 print:hidden">
                 Live API not reachable. Showing demo data.
