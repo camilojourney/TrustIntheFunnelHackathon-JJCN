@@ -67,10 +67,10 @@ function Onboarding({ state, dispatch }: { state: InterviewState; dispatch: Reac
         <div className="welcome-person"><span>Prepared for</span><strong>{state.application.candidateName}</strong><small>{state.application.roleTitle}</small></div>
         <StepLabel>Your interview is ready</StepLabel>
         <h1>Hi Maya, meet Sage.</h1>
-        <p className="welcome-lede">Sage will guide a focused voice conversation about the work already described in your application. Most candidates finish in 15 to 20 minutes.</p>
+        <p className="welcome-lede">This is your opportunity to bring the work behind your application to life. Sage will help you share the decisions, context, and impact that a resume cannot capture in 15 to 20 minutes.</p>
         <div className="welcome-facts">
-          <div><span>01</span><p><strong>A natural conversation</strong>Sage asks one question at a time and follows up when useful.</p></div>
-          <div><span>02</span><p><strong>Grounded in your application</strong>Every question shows the source claim and why it is being discussed.</p></div>
+          <div><span>01</span><p><strong>Your chance to add context</strong>Share the decisions, collaboration, and learning behind the outcome.</p></div>
+          <div><span>02</span><p><strong>Grounded in your application</strong>Sage starts from your experience, so you can focus on what you know best.</p></div>
           <div><span>03</span><p><strong>You stay in control</strong>Your camera is a private preview only. It is never recorded, sent, or analyzed.</p></div>
         </div>
       </section>
@@ -186,7 +186,7 @@ function ConversationHistory({ state }: { state: InterviewState }) {
   );
 }
 
-function InterviewWorkspace({ state, dispatch, stream, now }: { state: InterviewState; dispatch: React.Dispatch<Parameters<typeof interviewReducer>[1]>; stream: MediaStream | null; now: number }) {
+function InterviewWorkspace({ state, dispatch, stream, now, offline }: { state: InterviewState; dispatch: React.Dispatch<Parameters<typeof interviewReducer>[1]>; stream: MediaStream | null; now: number; offline: boolean }) {
   const active = state.questions[state.activeQuestionIndex];
   const claim = state.application.claims.find((item) => item.id === active.claimId)!;
   const progress = Math.round((state.answers.length / state.questions.length) * 100);
@@ -197,7 +197,7 @@ function InterviewWorkspace({ state, dispatch, stream, now }: { state: Interview
       <SagePanel speaking progress={progress} />
       <section className="interview-conversation">
         <header className="interview-topbar">
-          <div><span>Live interview</span><strong>{state.application.roleTitle}</strong></div>
+          <div><span>{offline ? "Offline-ready interview" : "Live interview"}</span><strong>{state.application.roleTitle}</strong></div>
           <div><span>Elapsed</span><strong>{formatElapsed(state.startedAt, now)}</strong></div>
           <div><span>Question</span><strong>{state.activeQuestionIndex + 1} of {state.questions.length}</strong></div>
         </header>
@@ -332,10 +332,10 @@ export function CandidateExperience() {
   return (
     <div className="app-frame sage-app">
       <a className="skip-link" href="#main-content">Skip to main content</a>
-      <Header offline={offline} />
+      {state.phase !== "interview" ? <Header offline={offline} /> : null}
       {state.phase === "onboarding" ? <Onboarding state={state} dispatch={dispatch} /> : null}
       {state.phase === "permissions" ? <Permissions state={state} dispatch={dispatch} stream={stream} checking={checking} onRequest={requestDevices} /> : null}
-      {state.phase === "interview" ? <InterviewWorkspace state={state} dispatch={dispatch} stream={stream} now={now} /> : null}
+      {state.phase === "interview" ? <InterviewWorkspace state={state} dispatch={dispatch} stream={stream} now={now} offline={offline} /> : null}
       {state.phase === "complete" ? <Completion state={state} onReset={reset} /> : null}
     </div>
   );

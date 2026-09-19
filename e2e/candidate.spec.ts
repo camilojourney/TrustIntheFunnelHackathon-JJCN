@@ -3,6 +3,7 @@ import { expect, test, type Page } from "@playwright/test";
 async function enterDemoInterview(page: Page) {
   await page.goto("/candidate");
   await expect(page.getByRole("heading", { name: "Hi Maya, meet Sage." })).toBeVisible();
+  await expect(page.getByText(/This is your opportunity to bring the work behind your application to life/)).toBeVisible();
   await page.getByRole("checkbox").check();
   await page.getByRole("button", { name: "Set up microphone and camera" }).click();
   await page.getByRole("button", { name: "Use demo devices" }).click();
@@ -21,9 +22,11 @@ async function submitVoiceAnswer(page: Page) {
 test("candidate completes the personalized voice interview and sees transparent handoff", async ({ page }) => {
   await enterDemoInterview(page);
 
+  await expect(page.getByRole("banner")).toHaveCount(0);
   await expect(page.getByRole("complementary", { name: "Sage, your interview guide" })).toBeVisible();
   await expect(page.getByLabel("Your camera preview").first()).toBeVisible();
   await expect(page.getByText(/Reduced enterprise onboarding time by 40%/).first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Walk us through what changed in onboarding, how the 40% improvement was measured, and what you personally owned." })).toBeVisible();
   await expect(page.getByRole("textbox")).toHaveCount(0);
 
   await submitVoiceAnswer(page);
