@@ -13,9 +13,9 @@ export const STATUS_META: Record<
   { label: string; meaning: string; badge: string; badgeDark: string; dot: string; border: string }
 > = {
   demonstrated: {
-    label: "Demonstrated",
+    label: "Explained in interview",
     meaning:
-      "The candidate gave a relevant, technically specific explanation in this interview. This does not prove authorship.",
+      "The candidate gave a relevant, technically specific explanation in this interview. This does not prove authorship or independently verify the claim.",
     badge: "bg-emerald-50 text-emerald-800 ring-emerald-600/20",
     // Held apart from `badge`: the print view must emit no dark: class.
     badgeDark: "dark:bg-emerald-950/60 dark:text-emerald-300 dark:ring-emerald-500/30",
