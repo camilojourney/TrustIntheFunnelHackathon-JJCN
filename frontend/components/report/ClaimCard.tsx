@@ -7,7 +7,9 @@ import { AnswerBlock, QuestionBlock } from "./Exchange";
 import { EvidenceList } from "./EvidenceList";
 import { StatusBadge } from "./StatusBadge";
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+// Shared with ClaimDetailsModal, so the card body and the modal body cannot
+// drift apart.
+export function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
       <h4 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -28,14 +30,12 @@ function plural(n: number, one: string, many: string) {
 
 export function ClaimCard({
   view,
-  expanded,
-  onToggle,
+  onOpenDetails,
   onOpenTimeline,
   printView = false,
 }: {
   view: ClaimView;
-  expanded: boolean;
-  onToggle: () => void;
+  onOpenDetails: (trigger: HTMLElement) => void;
   onOpenTimeline: (trigger: HTMLElement) => void;
   printView?: boolean;
 }) {
@@ -44,9 +44,10 @@ export function ClaimCard({
   const other = evidence.filter((e) => e.type !== "external_artifact");
   const bodyId = `claim-body-${claim.id}`;
 
-  // Collapsed keeps the card short so two claims fit on one screen. The full
-  // body stays in the DOM and prints, so a printed report is never partial.
-  const clamp = expanded ? "" : "line-clamp-2 print:line-clamp-none";
+  // The card is one height on screen: Details opens a modal, the card never
+  // grows. The full body stays in the DOM and prints, so a printed report is
+  // never partial.
+  const clamp = printView ? "" : "line-clamp-2 print:line-clamp-none";
   const { lead, rest } = splitLead(assessment.rationale);
 
   return (
@@ -99,19 +100,19 @@ export function ClaimCard({
           <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
             Why this status
           </span>
-          {/* Collapsed shows the first two sentences whole; the rest stays in the
+          {/* The card shows the first two sentences whole; the rest stays in the
               DOM and prints, so nothing is lost on paper. */}
           <p className="mt-1 text-sm text-slate-900">
             <span className="font-semibold">{lead}</span>
             {rest && (
-              <span className={expanded ? "text-slate-800" : "hidden text-slate-800 print:inline"}>
+              <span className={printView ? "text-slate-800" : "hidden text-slate-800 print:inline"}>
                 {` ${rest}`}
               </span>
             )}
           </p>
         </div>
 
-        {!expanded && (
+        {!printView && (
           <p className="text-xs text-slate-500 print:hidden">
             {plural(exchanges.length, "question", "questions")} ·{" "}
             {plural(evidence.length, "evidence item", "evidence items")} ·{" "}
@@ -125,7 +126,7 @@ export function ClaimCard({
 
         <div
           id={bodyId}
-          className={expanded ? "grid gap-4" : "hidden print:grid print:gap-4"}
+          className={printView ? "grid gap-4" : "hidden print:grid print:gap-4"}
         >
           <Section title="Questions and answers">
             {exchanges.length === 0 ? (
@@ -168,12 +169,10 @@ export function ClaimCard({
         <footer className="mt-3 border-t border-slate-100 pt-2 print:hidden">
           <button
             type="button"
-            onClick={onToggle}
-            aria-expanded={expanded}
-            aria-controls={bodyId}
+            onClick={(e) => onOpenDetails(e.currentTarget)}
             className="text-sm text-slate-500 transition hover:text-slate-800"
           >
-            {expanded ? "Hide details ▴" : "Details ▾"}
+            Details
           </button>
         </footer>
       )}

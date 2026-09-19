@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Logo } from "@/components/Logo";
 import { DecisionSupportBanner } from "@/components/report/DecisionSupportBanner";
 import { ReportView } from "@/components/report/ReportView";
 import { candidateName } from "@/lib/candidates";
@@ -15,7 +16,7 @@ export async function generateMetadata({
   const { source: raw } = await searchParams;
   const { report } = await getReport(id, wantedSource(raw));
   const name = candidateName(report.candidate_id);
-  return { title: `ClaimProof report - ${name} - ${report.role_title}` };
+  return { title: `Sage report - ${name} - ${report.role_title}` };
 }
 
 // A read-only view of the whole report: every card expanded, no controls.
@@ -34,6 +35,7 @@ export default async function PrintReport({
         Print-ready view. Press Cmd+P to save as PDF.
       </p>
       <header className="space-y-1">
+        <Logo />
         <h1 className="text-2xl font-semibold text-slate-900">
           {candidateName(report.candidate_id)}
         </h1>

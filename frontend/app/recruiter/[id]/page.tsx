@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Logo } from "@/components/Logo";
 import { DecisionSupportBanner } from "@/components/report/DecisionSupportBanner";
 import { PrintButton } from "@/components/report/PrintButton";
 import { ReportView } from "@/components/report/ReportView";
@@ -21,7 +22,11 @@ export default async function RecruiterReport({
   return (
     <main className="mx-auto w-full max-w-4xl space-y-6 px-4 py-8">
       <header className="space-y-1">
-        <Link href="/recruiter" className="text-sm text-sky-700 hover:text-sky-900 print:hidden">
+        <Logo />
+        <Link
+          href="/recruiter"
+          className="block text-sm text-emerald-700 hover:text-emerald-900 print:hidden"
+        >
           ← All candidates
         </Link>
         <div className="flex flex-wrap items-start justify-between gap-3">

@@ -1,4 +1,10 @@
-# Recruiter UI (Person 3) — handoff
+# Sage — recruiter UI (Person 3) — handoff
+
+The product name is **Sage**. It shows in the tab title, the browser tab icon,
+and a wordmark in the header of the queue, the report and the print view
+(`frontend/components/Logo.tsx`, drawing repeated in `frontend/app/icon.svg`).
+The brand accent is emerald-700; the sky-blue answer box and the status colors
+are not brand colors and do not change.
 
 Branch: `feat/recruiter-ui`. Owner until 2:00 pm Sep 19: Jacob. After that, any teammate can take it.
 
@@ -24,14 +30,17 @@ The page calls `GET {API_BASE}/api/candidates/{id}/report`. On any error, a time
 
 ## What works
 
-- `/recruiter` — queue with four candidates and status counts.
+- `/recruiter` — "Review queue": four candidates and status counts.
 - `/recruiter/{id}` — the report: summary counts, status filters, one card per claim. The header shows the candidate's name, then the role.
 - Each card: source excerpt, questions, answer excerpts, rationale, external evidence, interview evidence, limitations, unresolved questions.
-- "Evidence timeline" button in each card header opens the drawer. The drawer has 3 tabs — **Questions** (the claim, then each question and answer, with one line for when the answers were recorded), **Evidence**, **Assessment** (the assessment pill always carries the status color). Left and Right arrows move between the tabs. Record ids are not shown as text: they are in `data-record-id` and the hover `title`, and show as text in the print view only. Esc closes it. Focus moves to Close on open and returns to the header button on close. The page behind it does not scroll.
+- "Evidence timeline" button in each card header opens the drawer. The drawer has 3 tabs — **Questions**, **Evidence**, **Assessment** (the assessment pill always carries the status color). Left and Right arrows move between the tabs. Record ids are not shown as text: they are in `data-record-id` and the hover `title`, and show as text in the print view only. Esc closes it. Focus moves to Close on open and returns to the header button on close. The page behind it does not scroll.
+- The **Questions** tab is one step per exchange: the claim, then `Opening question` or `Follow-up question` with the "i" that says why it was asked, the question text, and the answer box under it. One label per thing — the drawer turns the `Q · Opening` chip off, because the step label already says it. The `<ol>` uses `flex flex-col gap-5`, not `space-y-5`, so the gap survives any wrapper.
+- "Details" in the card foot opens a **centered modal** for that claim (`ClaimDetailsModal.tsx`): the claim statement, its status badge, and the four sections — questions and answers with the FULL transcript, external evidence, interview and document evidence, unresolved questions. The card never grows. Only one layer is open at a time.
+- `Overlay.tsx` is the shared shell for both layers: `side="right"` is the drawer, `side="center"` is the modal. It owns Esc, the page scroll lock, `role="dialog" aria-modal="true"`, and moving focus to the control marked `data-overlay-close`. `ReportView` returns focus to the trigger, because it owns that element.
 - "Decision support, not a hiring decision" banner on both pages.
-- The collapsed card shows a 2-sentence summary taken from `rationale` ("Why this status", bold, never cut with an ellipsis); the full text shows in Details, the timeline, and print (`frontend/lib/summarize.ts`).
-- A question and its answer use one shared pair of blocks (`frontend/components/report/Exchange.tsx`): a dark "Q · Opening" / "Q · Follow-up" chip, then the answer in a tinted "Candidate answer" box. The card and the drawer match.
-- Cards collapse by default: header, source excerpt, rationale, and a counts line. "Details ▾" opens one card, "Expand all" opens every card. Two claims fit on one screen for the compare moment.
+- The card shows a 2-sentence summary taken from `rationale` ("Why this status", bold, never cut with an ellipsis); the full text shows in the Details modal, the timeline, and print (`frontend/lib/summarize.ts`).
+- A question and its answer use one shared pair of blocks (`frontend/components/report/Exchange.tsx`): a dark "Q · Opening" / "Q · Follow-up" chip, then the answer in a tinted "Candidate answer" box. `chip={false}` and `indent={false}` are how the drawer drops the parts it already says. The modal and print keep both.
+- The card has one height: header, source excerpt, rationale, and a counts line. "Details" opens the modal. Two claims fit on one screen for the compare moment.
 - **Demo | Live** toggle, "Print" and "PDF" in one header row. Print opens the browser print dialog. PDF opens `/recruiter/{id}/print` in a new tab with no dialog; Cmd+P from that tab saves it, and the tab title sets the file name.
 - `/recruiter/{id}/print` — a read-only print view: every claim card expanded with evidence and limitations, the three status definitions as plain text, no buttons, no filters, no drawer. It honors `?source=`.
 - Print CSS hides the filters, buttons, drawer, and back link, expands every card, and keeps a card on one page.
@@ -68,8 +77,8 @@ it falls back to the `demo` report.
 
 ## Demo tips
 
-1. Open `/recruiter/demo`. All cards start collapsed.
-2. Press "Details ▾" on claim A (demonstrated) and claim C (unresolved). Both fit on one screen, side by side down the page.
+1. Open `/recruiter/demo`. Every card is one height, so two fit on one screen.
+2. Press "Details" on claim A (demonstrated), then on claim C (unresolved). Each opens a centered modal with the whole transcript. Esc closes it.
 3. Press "Evidence timeline" on claim C to walk claim → question → answer → evidence → assessment. Esc closes it.
 4. "PDF" opens the clean report in a new tab; Cmd+P there saves it. "Print" is for paper. Every card prints expanded, limitations included.
 
@@ -89,7 +98,8 @@ it falls back to the `demo` report.
 - `frontend/lib/candidates.ts` — the queue list `{ id, name }[]` and `candidateName(id)`.
 - `frontend/lib/report.ts` — API fetch with fixture fallback, plus the `SEEDED` id-to-report map. `getReport(id, want)` takes the toggle value.
 - `frontend/lib/join.ts` — joins the flat report into one view per claim. A claim with no assessment shows as unresolved.
-- `frontend/components/report/` — all report components. `ClaimCard.tsx` and `ReportView.tsx` are client components; `ReportView` owns which cards are open.
+- `frontend/components/Logo.tsx` — the Sage wordmark: a sage leaf with a check as its vein, emerald-700 on white. `frontend/app/icon.svg` is the same drawing and becomes the browser tab icon.
+- `frontend/components/report/` — all report components. `ClaimCard.tsx`, `ReportView.tsx`, `Overlay.tsx`, `ClaimDetailsModal.tsx` and `ClaimTimeline.tsx` are client components; `ReportView` owns which layer is open and returns focus to the trigger.
 - `frontend/app/globals.css` — the `@media print` block. Per-element print rules use Tailwind `print:` variants.
 - `frontend/next.config.ts` — sets `turbopack.root` to the repo root so `shared/` and `fixtures/` resolve. Keep it.
 

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Logo } from "@/components/Logo";
 import { DecisionSupportBanner } from "@/components/report/DecisionSupportBanner";
 import { CANDIDATES } from "@/lib/candidates";
 import { buildClaimViews } from "@/lib/join";
@@ -19,8 +20,8 @@ export default async function RecruiterQueue() {
   return (
     <main className="mx-auto w-full max-w-4xl space-y-6 px-4 py-8">
       <header>
-        <div className="text-sm font-semibold text-sky-700">ClaimProof</div>
-        <h1 className="text-2xl font-semibold text-slate-900">Candidates ready for review</h1>
+        <Logo />
+        <h1 className="mt-1 text-2xl font-semibold text-slate-900">Review queue</h1>
       </header>
       <DecisionSupportBanner />
       <ul className="space-y-3">
@@ -44,7 +45,7 @@ export default async function RecruiterQueue() {
                     {STATUS_META[s].label.toLowerCase()}
                   </span>
                 ))}
-                <span className="font-medium text-sky-700">Open report →</span>
+                <span className="font-medium text-emerald-700">Open report →</span>
               </div>
             </Link>
           </li>
