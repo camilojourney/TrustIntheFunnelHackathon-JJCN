@@ -29,6 +29,8 @@ The page calls `GET {API_BASE}/api/candidates/{id}/report`. On any error, a time
 - Each card: source excerpt, questions, answer excerpts, rationale, external evidence, interview evidence, limitations, unresolved questions.
 - "Evidence timeline" button in each card header opens the drawer: claim → question → answer → evidence → assessment, with ids. Esc closes it. Focus moves to Close on open and returns to the header button on close. The page behind it does not scroll.
 - "Decision support, not a hiring decision" banner on both pages.
+- The collapsed card shows a 2-sentence summary taken from `rationale` ("Why this status", bold, never cut with an ellipsis); the full text shows in Details, the timeline, and print (`frontend/lib/summarize.ts`).
+- A question and its answer use one shared pair of blocks (`frontend/components/report/Exchange.tsx`): a dark "Q · Opening" / "Q · Follow-up" chip, then the answer in a tinted "Candidate answer" box. The card and the drawer match.
 - Cards collapse by default: header, source excerpt, rationale, and a counts line. "Details ▾" opens one card, "Expand all" opens every card. Two claims fit on one screen for the compare moment.
 - **Demo | Live** toggle, "Print" and "PDF" in one header row. Print opens the browser print dialog. PDF opens `/recruiter/{id}/print` in a new tab with no dialog; Cmd+P from that tab saves it, and the tab title sets the file name.
 - `/recruiter/{id}/print` — a read-only print view: every claim card expanded with evidence and limitations, the three status definitions as plain text, no buttons, no filters, no drawer. It honors `?source=`.

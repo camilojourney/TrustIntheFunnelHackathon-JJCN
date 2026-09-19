@@ -2,6 +2,8 @@
 
 import type { ClaimView } from "@/lib/join";
 import { STATUS_META } from "@/lib/status";
+import { splitLead } from "@/lib/summarize";
+import { AnswerBlock, QuestionBlock } from "./Exchange";
 import { EvidenceList } from "./EvidenceList";
 import { StatusBadge } from "./StatusBadge";
 
@@ -45,6 +47,7 @@ export function ClaimCard({
   // Collapsed keeps the card short so two claims fit on one screen. The full
   // body stays in the DOM and prints, so a printed report is never partial.
   const clamp = expanded ? "" : "line-clamp-2 print:line-clamp-none";
+  const { lead, rest } = splitLead(assessment.rationale);
 
   return (
     <article
@@ -67,7 +70,7 @@ export function ClaimCard({
             <button
               type="button"
               onClick={(e) => onOpenTimeline(e.currentTarget)}
-              className="rounded-full bg-slate-900 px-3 py-1.5 text-sm text-white transition hover:bg-slate-700 print:hidden"
+              className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 transition hover:border-slate-500 print:hidden"
             >
               Evidence timeline
             </button>
@@ -87,9 +90,18 @@ export function ClaimCard({
 
         <div>
           <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Assessment rationale
+            Why this status
           </span>
-          <p className={`mt-1 text-sm text-slate-800 ${clamp}`}>{assessment.rationale}</p>
+          {/* Collapsed shows the first two sentences whole; the rest stays in the
+              DOM and prints, so nothing is lost on paper. */}
+          <p className="mt-1 text-sm text-slate-900">
+            <span className="font-semibold">{lead}</span>
+            {rest && (
+              <span className={expanded ? "text-slate-800" : "hidden text-slate-800 print:inline"}>
+                {` ${rest}`}
+              </span>
+            )}
+          </p>
         </div>
 
         {!expanded && (
@@ -112,18 +124,11 @@ export function ClaimCard({
             {exchanges.length === 0 ? (
               <p className="text-sm text-slate-500">No question was asked about this claim.</p>
             ) : (
-              <ol className="space-y-3">
+              <ol className="space-y-4">
                 {exchanges.map(({ question, answer }) => (
-                  <li key={question.id} className="text-sm">
-                    <p className="text-slate-900">
-                      <span className="mr-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-slate-600">
-                        {question.kind === "opening" ? "Opening" : "Follow-up"}
-                      </span>
-                      {question.text}
-                    </p>
-                    <p className="mt-1 border-l-2 border-sky-300 pl-3 text-slate-700">
-                      {answer ? `“${excerpt(answer.transcript)}”` : "No answer recorded."}
-                    </p>
+                  <li key={question.id}>
+                    <QuestionBlock kind={question.kind} text={question.text} />
+                    <AnswerBlock text={answer ? excerpt(answer.transcript) : undefined} />
                   </li>
                 ))}
               </ol>

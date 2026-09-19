@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from "react";
 import type { ClaimView } from "@/lib/join";
+import { splitLead } from "@/lib/summarize";
+import { AnswerBlock, QuestionBlock } from "./Exchange";
 import { StatusBadge } from "./StatusBadge";
 
 function Step({
@@ -47,6 +49,7 @@ export function ClaimTimeline({ view, onClose }: { view: ClaimView; onClose: () 
   }, []);
 
   const { claim, exchanges, evidence, assessment } = view;
+  const { lead, rest } = splitLead(assessment.rationale);
 
   return (
     <div
@@ -84,23 +87,16 @@ export function ClaimTimeline({ view, onClose }: { view: ClaimView; onClose: () 
 
           {exchanges.map(({ question, answer }) => (
             <div key={question.id} className="contents">
-              <Step
-                kind={question.kind === "opening" ? "Opening question" : "Follow-up question"}
-                id={question.id}
-              >
-                <p>{question.text}</p>
+              <Step kind="Question" id={question.id}>
+                <QuestionBlock kind={question.kind} text={question.text} />
                 <p className="mt-1 text-xs text-slate-500">Why this was asked: {question.intent}</p>
               </Step>
               <Step kind="Answer" id={answer?.id}>
-                {answer ? (
-                  <>
-                    <p>“{answer.transcript}”</p>
-                    <p className="mt-1 text-xs text-slate-500">
-                      {new Date(answer.created_at).toLocaleString()}
-                    </p>
-                  </>
-                ) : (
-                  <p className="text-slate-500">No answer recorded.</p>
+                <AnswerBlock text={answer?.transcript} />
+                {answer && (
+                  <p className="ml-4 mt-1 text-xs text-slate-500">
+                    {new Date(answer.created_at).toLocaleString()}
+                  </p>
                 )}
               </Step>
             </div>
@@ -121,7 +117,10 @@ export function ClaimTimeline({ view, onClose }: { view: ClaimView; onClose: () 
 
           <Step kind="Assessment">
             <StatusBadge status={assessment.status} />
-            <p className="mt-2">{assessment.rationale}</p>
+            <p className="mt-2">
+              <span className="font-semibold">{lead}</span>
+              {rest && <span>{` ${rest}`}</span>}
+            </p>
             <p className="mt-1 text-xs text-slate-500">
               Based on: {assessment.evidence_ids.join(", ") || "no evidence items"}
             </p>
