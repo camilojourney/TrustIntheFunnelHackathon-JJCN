@@ -6,6 +6,6 @@ export default defineConfig({
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"], channel: "chrome", launchOptions: { args: ["--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream"] } } }],
   webServer: [
     { command: "../.venv/bin/python -m uvicorn app.main:app --app-dir ../backend --host 127.0.0.1 --port 8010", url: "http://127.0.0.1:8010/health", env: { DEMO_MODE: "true", DATABASE_URL: "sqlite:///../backend/e2e.db", PYTHONDONTWRITEBYTECODE: "1" }, reuseExistingServer: false },
-    { command: "npm run dev -- --hostname 127.0.0.1 --port 3100", url: "http://127.0.0.1:3100/candidate", env: { API_BASE: "http://127.0.0.1:8010" }, reuseExistingServer: false, timeout: 120000 },
+    { command: "npm run dev -- --hostname 127.0.0.1 --port 3100", url: "http://127.0.0.1:3100/candidate", env: { PLAYWRIGHT_TEST: "true", API_BASE: "http://127.0.0.1:8010" }, reuseExistingServer: false, timeout: 120000 },
   ],
 });

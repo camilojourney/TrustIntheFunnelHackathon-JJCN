@@ -5,7 +5,7 @@
 // PDF library here, so Cmd+P from that tab is the save step.
 export function PrintButton({ id, source }: { id: string; source: "demo" | "live" }) {
   const style =
-    "rounded-full border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 transition hover:border-slate-500";
+    "rounded-full border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 transition hover:border-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-slate-500";
 
   return (
     <div className="flex flex-nowrap items-center gap-2 print:hidden">

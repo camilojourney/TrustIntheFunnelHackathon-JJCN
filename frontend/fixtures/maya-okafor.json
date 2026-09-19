@@ -1,0 +1,202 @@
+{
+  "candidate_id": "maya-okafor",
+  "role_title": "Data Engineer",
+  "claims": [
+    {
+      "id": "claim-a",
+      "candidate_id": "maya-okafor",
+      "source_document": "resume",
+      "source_excerpt": "Replaced nightly batch ETL with a Kafka and Flink streaming pipeline. Dashboard data delay fell from 6 hours to 4 minutes.",
+      "category": "project",
+      "statement": "Moved nightly batch ETL to streaming and cut dashboard data delay from 6 hours to 4 minutes.",
+      "importance": "high",
+      "entities": ["Kafka", "Flink", "ETL", "streaming", "data latency"]
+    },
+    {
+      "id": "claim-b",
+      "candidate_id": "maya-okafor",
+      "source_document": "resume",
+      "source_excerpt": "Wrote a dbt test suite that caught 12 upstream schema changes before they reached the reporting tables.",
+      "category": "project",
+      "statement": "Built dbt tests that caught 12 upstream schema changes before reporting tables broke.",
+      "importance": "medium",
+      "entities": ["dbt", "schema drift", "data tests", "reporting tables"]
+    },
+    {
+      "id": "claim-c",
+      "candidate_id": "maya-okafor",
+      "source_document": "resume",
+      "source_excerpt": "Led a warehouse cost reduction programme that cut monthly spend by 30%.",
+      "category": "impact",
+      "statement": "Led a programme that cut monthly data warehouse spend by 30%.",
+      "importance": "high",
+      "entities": ["Snowflake", "warehouse cost", "partitioning"]
+    }
+  ],
+  "questions": [
+    {
+      "id": "q-a1",
+      "claim_id": "claim-a",
+      "text": "What held the old batch pipeline at a 6 hour delay, and how did you measure the 4 minute figure after the change?",
+      "kind": "opening",
+      "intent": "Check the cause of the old delay and the measurement method behind the new number."
+    },
+    {
+      "id": "q-a2",
+      "claim_id": "claim-a",
+      "text": "What happens to a late or out-of-order event in the streaming pipeline, and how do the daily totals stay correct?",
+      "kind": "follow_up",
+      "intent": "Probe correctness under late data, which the nightly batch job handled by waiting."
+    },
+    {
+      "id": "q-b1",
+      "claim_id": "claim-b",
+      "text": "Which dbt tests did you write, and what did a failing test do to the pipeline run?",
+      "kind": "opening",
+      "intent": "Establish the test types and whether a failure actually stopped bad data."
+    },
+    {
+      "id": "q-b2",
+      "claim_id": "claim-b",
+      "text": "Describe one of the 12 schema changes the suite caught. What broke, and who fixed it?",
+      "kind": "follow_up",
+      "intent": "Get a specific incident rather than a count."
+    },
+    {
+      "id": "q-c1",
+      "claim_id": "claim-c",
+      "text": "What changes produced the 30% cut, and over which months did you compare the spend?",
+      "kind": "opening",
+      "intent": "Establish the technical changes and the comparison window behind the 30%."
+    },
+    {
+      "id": "q-c2",
+      "claim_id": "claim-c",
+      "text": "You said the vendor also changed its pricing that quarter. How much of the 30% came from your changes, and what did leading the programme involve?",
+      "kind": "follow_up",
+      "intent": "Separate the candidate's contribution from the pricing change, and define the leadership role."
+    }
+  ],
+  "answers": [
+    {
+      "id": "ans-a1",
+      "question_id": "q-a1",
+      "transcript": "The batch job ran at 02:00 and took about ninety minutes, so anything that happened after 02:00 waited for the next night. Analysts saw yesterday morning's data at best. I moved the change feed into Kafka with Debezium on the Postgres write-ahead log, and a Flink job that writes to the warehouse in small commits. For the 4 minutes, I stamped each row with the source commit time and compared it to the warehouse insert time, then took the p95 over a full week. That p95 was 4 minutes 10 seconds. The median was closer to 50 seconds.",
+      "created_at": "2026-09-19T09:02:14Z"
+    },
+    {
+      "id": "ans-a2",
+      "question_id": "q-a2",
+      "transcript": "Flink watermarks allow 15 minutes of lateness. Anything later than that goes to a side output table, and a small hourly job folds those rows back in. Daily totals are computed from the warehouse table rather than from the stream, so a late row changes the total when it lands instead of being lost. We kept the old batch job running for six weeks and compared daily totals row by row. The two agreed to within four rows a day, and every difference was a late event we could point at.",
+      "created_at": "2026-09-19T09:05:40Z"
+    },
+    {
+      "id": "ans-b1",
+      "question_id": "q-b1",
+      "transcript": "Mostly not_null and unique on the keys, accepted_values on the status columns, and relationships tests between orders and customers. I also added a few singular tests for things like a negative order total. They run in CI on every pull request and again before the nightly publish step. A failure in the publish run stops the run before the reporting schema is swapped, so the dashboards keep yesterday's data instead of showing broken data.",
+      "created_at": "2026-09-19T09:08:02Z"
+    },
+    {
+      "id": "ans-b2",
+      "question_id": "q-b2",
+      "transcript": "The clearest one was the payments team renaming status to payment_status and adding a pending_review value. The accepted_values test failed first on the new value, then the not_null failed once the old column went away. The run stopped, I got paged, and I opened a ticket with the payments team the same morning. I wrote the mapping in our staging model so both names work, they shipped the rename properly the next sprint, and I removed the mapping after that.",
+      "created_at": "2026-09-19T09:10:31Z"
+    },
+    {
+      "id": "ans-c1",
+      "question_id": "q-c1",
+      "transcript": "Three things. I clustered the two biggest event tables on the date column so the common queries stopped doing full scans. I moved about forty scheduled dashboards off an always-on warehouse onto one that suspends after two minutes. And I set a 90 day retention on the raw landing tables. I compared March against July on the vendor invoice, and the monthly line was about 30% lower. I should say the vendor also changed its per-credit pricing in May.",
+      "created_at": "2026-09-19T09:13:15Z"
+    },
+    {
+      "id": "ans-c2",
+      "question_id": "q-c2",
+      "transcript": "I never split the two out. I know the clustering change alone cut the daily scan bytes by roughly half, because I watched that metric, but I did not convert it to money. On leading it, I wrote the proposal and did the clustering and the retention work myself. A platform engineer moved the dashboards, and my manager approved the retention policy with legal. So I drove it, but I was not managing anyone.",
+      "created_at": "2026-09-19T09:15:48Z"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "ev-a1",
+      "claim_id": "claim-a",
+      "type": "interview_excerpt",
+      "source_label": "Answer to opening question",
+      "excerpt": "I stamped each row with the source commit time and compared it to the warehouse insert time, then took the p95 over a full week. That p95 was 4 minutes 10 seconds.",
+      "supports": "The candidate names the measurement method, the statistic, and the observation window behind the 4 minute figure.",
+      "limitations": "This is the candidate's own account. The latency metric was not reviewed."
+    },
+    {
+      "id": "ev-a2",
+      "claim_id": "claim-a",
+      "type": "interview_excerpt",
+      "source_label": "Answer to follow-up question",
+      "excerpt": "We kept the old batch job running for six weeks and compared daily totals row by row. The two agreed to within four rows a day, and every difference was a late event we could point at.",
+      "supports": "The candidate describes a concrete correctness check for late data rather than asserting that totals stayed correct.",
+      "limitations": "The comparison was described in the interview. No run log was provided."
+    },
+    {
+      "id": "ev-b1",
+      "claim_id": "claim-b",
+      "type": "interview_excerpt",
+      "source_label": "Answer to follow-up question",
+      "excerpt": "The payments team renamed status to payment_status and added a pending_review value. The accepted_values test failed first on the new value, then the not_null failed once the old column went away.",
+      "supports": "The candidate gives a specific failure, the order the tests failed in, and what happened next.",
+      "limitations": "One incident out of the twelve was described. The remaining eleven were not discussed."
+    },
+    {
+      "id": "ev-b2",
+      "claim_id": "claim-b",
+      "type": "external_artifact",
+      "source_label": "GitHub repository: warehouse-dbt-tests",
+      "excerpt": "README: \"dbt project for the reporting warehouse. models/staging holds the source mappings; tests run in CI and again in the pre-publish hook, which aborts the schema swap on any failure.\"",
+      "source_url": "https://github.com/example/warehouse-dbt-tests",
+      "supports": "A public project exists whose test layout and pre-publish hook match the described behavior.",
+      "limitations": "The artifact matches the description. It does not prove that the candidate wrote it, and the CI history was not reviewed."
+    },
+    {
+      "id": "ev-c1",
+      "claim_id": "claim-c",
+      "type": "interview_excerpt",
+      "source_label": "Answer to opening question",
+      "excerpt": "I clustered the two biggest event tables on the date column, moved about forty scheduled dashboards onto a warehouse that suspends after two minutes, and set a 90 day retention on the raw landing tables.",
+      "supports": "The candidate names three specific and plausible cost changes and the invoice months used for the comparison.",
+      "limitations": "The invoice was not reviewed, and the comparison window covers a vendor pricing change."
+    },
+    {
+      "id": "ev-c2",
+      "claim_id": "claim-c",
+      "type": "interview_excerpt",
+      "source_label": "Answer to follow-up question",
+      "excerpt": "I never split the two out. I know the clustering change alone cut the daily scan bytes by roughly half, but I did not convert it to money.",
+      "supports": "The candidate raised the pricing change without being prompted and stated plainly what was not measured.",
+      "limitations": "The share of the 30% caused by the candidate's work is still unknown."
+    }
+  ],
+  "assessments": [
+    {
+      "claim_id": "claim-a",
+      "status": "demonstrated",
+      "rationale": "The candidate explained why the old job held a 6 hour delay and named the components that replaced it. The 4 minute figure came with a measurement method, a statistic, and a one week window, and the candidate volunteered the median as well. The follow-up on late events was answered with watermarks, a side output path, and a six week parallel run against the old job. The account is specific and internally consistent, though none of the metrics were reviewed.",
+      "evidence_ids": ["ev-a1", "ev-a2"],
+      "unresolved_questions": []
+    },
+    {
+      "claim_id": "claim-b",
+      "status": "demonstrated",
+      "rationale": "The candidate listed the test types, where they run, and what a failure does to the publish step. The follow-up produced one full incident with the failure order, the ticket, the temporary mapping, and its removal. A public repository matches the described layout and pre-publish behavior. Eleven of the twelve catches were not discussed, but the one described is detailed enough to stand.",
+      "evidence_ids": ["ev-b1", "ev-b2"],
+      "unresolved_questions": []
+    },
+    {
+      "claim_id": "claim-c",
+      "status": "partially_demonstrated",
+      "rationale": "The candidate named three concrete cost changes and the two invoice months used for the comparison, which supports real work on warehouse spend. The candidate then said, without being asked, that the vendor changed its per-credit pricing inside the same window and that the two effects were never separated. So the 30% figure cannot be attributed to the candidate's changes on this evidence. On leading it, the candidate wrote the proposal and did two of the three changes, but did not manage anyone.",
+      "evidence_ids": ["ev-c1", "ev-c2"],
+      "unresolved_questions": [
+        "How much of the 30% remains after the vendor pricing change is removed?",
+        "Is there an invoice or a cost dashboard a reviewer can compare month over month?",
+        "What did leading the programme cover beyond writing the proposal?"
+      ]
+    }
+  ]
+}
