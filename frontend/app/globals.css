@@ -1,13 +1,35 @@
 @import "tailwindcss";
 
+/* Dark mode is a class on <html>, not a media query. The theme button in the
+   header is the only control after first load, and an inline script in
+   app/layout.tsx sets the class before the first paint. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #f8fafc;
   --foreground: #171717;
 }
 
+/* Scrollbars and form controls follow the theme. */
+html {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+  --background: #020617;
+  --foreground: #f1f5f9;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+}
+
+/* The loading skeleton also streams into the print route, so its bars carry no
+   dark: class. This one rule darkens them on screen instead. */
+html.dark [aria-busy="true"] .animate-pulse {
+  background-color: var(--color-slate-800);
 }
 
 body {
@@ -17,10 +39,18 @@ body {
 }
 
 /* Print / save as PDF: white paper, no shadows, cards never split across pages.
-   Claim bodies are expanded by the print: variants in ClaimCard. */
+   Claim bodies are expanded by the print: variants in ClaimCard.
+   Paper is always light. These rules reset the page colors, and ThemeToggle
+   drops the dark class on beforeprint, because a dark: utility would otherwise
+   still apply inside this block. */
 @media print {
-  :root {
+  :root,
+  html.dark {
     --background: #ffffff;
+  }
+
+  html.dark {
+    color-scheme: light;
   }
 
   body {

@@ -62,7 +62,7 @@ export function InfoTip({
           focusedRef.current = false;
           setOpen(false);
         }}
-        className="flex h-4 w-4 items-center justify-center rounded-full border border-slate-400 text-[10px] font-semibold leading-none text-slate-500 transition hover:border-slate-700 hover:text-slate-800"
+        className="flex h-4 w-4 items-center justify-center rounded-full border border-slate-400 text-[10px] font-semibold leading-none text-slate-500 transition hover:border-slate-700 hover:text-slate-800 dark:border-slate-500 dark:text-slate-400 dark:hover:border-slate-300 dark:hover:text-slate-200"
       >
         i
       </button>
@@ -70,7 +70,7 @@ export function InfoTip({
         <span
           id={id}
           role="tooltip"
-          className={`absolute top-6 z-30 w-60 rounded-md border border-slate-200 bg-white p-3 text-left text-xs font-normal normal-case leading-snug tracking-normal text-slate-700 shadow-lg ${
+          className={`absolute top-6 z-30 w-60 rounded-md border border-slate-200 bg-white p-3 text-left text-xs font-normal normal-case leading-snug tracking-normal text-slate-700 shadow-lg dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 ${
             align === "left" ? "left-0" : "left-1/2 -translate-x-1/2"
           }`}
         >

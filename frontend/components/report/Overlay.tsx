@@ -13,8 +13,9 @@ const WRAP = {
 };
 
 const PANEL = {
-  right: "relative h-full w-full max-w-xl overflow-y-auto bg-white p-6 shadow-xl",
-  center: "relative max-h-[85vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl",
+  right: "relative h-full w-full max-w-xl overflow-y-auto bg-white p-6 shadow-xl dark:bg-slate-900",
+  center:
+    "relative max-h-[85vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl dark:bg-slate-900",
 };
 
 export function Overlay({
@@ -53,7 +54,7 @@ export function Overlay({
       <button
         type="button"
         aria-label={closeLabel}
-        className="absolute inset-0 bg-slate-900/40"
+        className="absolute inset-0 bg-slate-900/40 dark:bg-black/60"
         onClick={onClose}
       />
       <div ref={panelRef} className={PANEL[side]}>

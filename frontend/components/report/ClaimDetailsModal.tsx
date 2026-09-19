@@ -18,8 +18,12 @@ export function ClaimDetailsModal({ view, onClose }: { view: ClaimView; onClose:
     <Overlay side="center" closeLabel="Close details" onClose={onClose}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-xs uppercase tracking-wide text-slate-500">Claim details</div>
-          <h2 className="mt-1 text-lg font-semibold text-slate-900">{claim.statement}</h2>
+          <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            Claim details
+          </div>
+          <h2 className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">
+            {claim.statement}
+          </h2>
           <div className="mt-2">
             <StatusBadge status={assessment.status} />
           </div>
@@ -28,7 +32,7 @@ export function ClaimDetailsModal({ view, onClose }: { view: ClaimView; onClose:
           data-overlay-close="true"
           type="button"
           onClick={onClose}
-          className="shrink-0 rounded border border-slate-300 px-2 py-1 text-sm text-slate-600 hover:bg-slate-50"
+          className="shrink-0 rounded border border-slate-300 px-2 py-1 text-sm text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800"
         >
           Close
         </button>
@@ -37,7 +41,9 @@ export function ClaimDetailsModal({ view, onClose }: { view: ClaimView; onClose:
       <div className="mt-5 grid gap-4">
         <Section title="Questions and answers">
           {exchanges.length === 0 ? (
-            <p className="text-sm text-slate-500">No question was asked about this claim.</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              No question was asked about this claim.
+            </p>
           ) : (
             <ol className="space-y-4">
               {exchanges.map(({ question, answer }) => (
@@ -62,7 +68,7 @@ export function ClaimDetailsModal({ view, onClose }: { view: ClaimView; onClose:
 
         {assessment.unresolved_questions.length > 0 && (
           <Section title="Unresolved questions for human review">
-            <ul className="list-disc space-y-1 pl-5 text-sm text-slate-800">
+            <ul className="list-disc space-y-1 pl-5 text-sm text-slate-800 dark:text-slate-300">
               {assessment.unresolved_questions.map((q) => (
                 <li key={q}>{q}</li>
               ))}

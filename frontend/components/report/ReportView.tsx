@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import type { CandidateReport } from "@shared/contracts";
+import { cx } from "@/lib/cx";
 import { buildClaimViews } from "@/lib/join";
 import { STATUSES, type Status } from "@/lib/status";
 import { ClaimCard } from "./ClaimCard";
@@ -60,7 +61,12 @@ export function ReportView({
       )}
       <div className="space-y-4">
         {visible.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">
+          <p
+            className={cx(
+              "rounded-lg border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500",
+              !printView && "dark:border-slate-700 dark:text-slate-400",
+            )}
+          >
             No claims have this status.
           </p>
         ) : (

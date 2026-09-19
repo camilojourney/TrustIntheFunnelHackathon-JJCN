@@ -1,3 +1,4 @@
+import { cx } from "@/lib/cx";
 import { STATUSES, STATUS_META, type Status } from "@/lib/status";
 import { InfoTip } from "./InfoTip";
 
@@ -14,12 +15,24 @@ export function StatusSummary({
         {STATUSES.map((s) => (
           <div
             key={s}
-            className={`rounded-lg border border-l-4 border-slate-200 bg-white px-3 py-3 ${STATUS_META[s].border}`}
+            className={cx("rounded-lg border border-l-4 border-slate-200 bg-white px-3 py-3", !printView && "dark:border-y-slate-800 dark:border-r-slate-800 dark:bg-slate-900", STATUS_META[s].border)}
           >
             {/* One row: count, label, "i". The tile stays short. */}
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-semibold text-slate-900">{counts[s]}</span>
-              <span className="whitespace-nowrap text-sm font-medium text-slate-800">
+              <span
+                className={cx(
+                  "text-2xl font-semibold text-slate-900",
+                  !printView && "dark:text-slate-100",
+                )}
+              >
+                {counts[s]}
+              </span>
+              <span
+                className={cx(
+                  "whitespace-nowrap text-sm font-medium text-slate-800",
+                  !printView && "dark:text-slate-300",
+                )}
+              >
                 {STATUS_META[s].label}
               </span>
               {!printView && (
@@ -33,9 +46,10 @@ export function StatusSummary({
       </div>
       {/* Paper and the print view have no popover, so they define their terms. */}
       <dl
-        className={`mt-2 text-[11px] leading-snug text-slate-600 ${
-          printView ? "block" : "hidden print:block"
-        }`}
+        className={cx(
+          `mt-2 text-[11px] leading-snug text-slate-600 ${printView ? "block" : "hidden print:block"}`,
+          !printView && "dark:text-slate-400",
+        )}
       >
         {STATUSES.map((s) => (
           <div key={s}>

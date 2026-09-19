@@ -35,7 +35,7 @@ export default async function PrintReport({
         Print-ready view. Press Cmd+P to save as PDF.
       </p>
       <header className="space-y-1">
-        <Logo />
+        <Logo printView />
         <h1 className="text-2xl font-semibold text-slate-900">
           {candidateName(report.candidate_id)}
         </h1>
@@ -46,7 +46,7 @@ export default async function PrintReport({
           Data source: {source === "api" ? "live API" : "demo fixture"}
         </p>
       </header>
-      <DecisionSupportBanner />
+      <DecisionSupportBanner printView />
       <ReportView report={report} printView />
     </main>
   );

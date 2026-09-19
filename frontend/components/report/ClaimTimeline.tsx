@@ -26,20 +26,25 @@ function Step({
   // can hover it or grep the DOM for it.
   return (
     <li className="relative pl-6" data-record-id={id} title={id}>
-      <span className="absolute left-0 top-1.5 h-2.5 w-2.5 rounded-full border-2 border-slate-400 bg-white" />
-      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+      <span className="absolute left-0 top-1.5 h-2.5 w-2.5 rounded-full border-2 border-slate-400 bg-white dark:border-slate-500 dark:bg-slate-900" />
+      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
         {kind}
         {labelAfter}
-        {meta && <span className="ml-auto font-normal normal-case text-slate-400">{meta}</span>}
+        {meta && (
+          <span className="ml-auto font-normal normal-case text-slate-400 dark:text-slate-500">
+            {meta}
+          </span>
+        )}
       </div>
-      <div className="mt-1 text-sm text-slate-800">{children}</div>
+      <div className="mt-1 text-sm text-slate-800 dark:text-slate-300">{children}</div>
     </li>
   );
 }
 
 // flex + gap, not space-y: the gap survives any wrapper between the ol and
 // its li children, which space-y does not.
-const LIST = "mt-5 flex flex-col gap-5 border-l border-slate-200 pl-0 [&>li]:-ml-[5px]";
+const LIST =
+  "mt-5 flex flex-col gap-5 border-l border-slate-200 pl-0 dark:border-slate-800 [&>li]:-ml-[5px]";
 
 // en-US gives "11:02 AM" with a narrow no-break space. This page shows "11:02 am".
 function clock(text: string) {
@@ -109,8 +114,8 @@ export function ClaimTimeline({ view, onClose }: { view: ClaimView; onClose: () 
   const pill = "rounded-full border px-3 py-1.5 text-sm transition";
   const plain = (on: boolean) =>
     on
-      ? `${pill} border-slate-900 bg-slate-900 text-white`
-      : `${pill} border-slate-300 bg-white text-slate-700 hover:border-slate-500`;
+      ? `${pill} border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900`
+      : `${pill} border-slate-300 bg-white text-slate-700 hover:border-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-slate-500`;
 
   // Built as one string: React would split adjacent text nodes with a comment.
   const evidenceLabel = `Evidence · ${evidence.length}`;
@@ -120,14 +125,18 @@ export function ClaimTimeline({ view, onClose }: { view: ClaimView; onClose: () 
     <Overlay side="right" closeLabel="Close timeline" onClose={onClose}>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-xs uppercase tracking-wide text-slate-500">Evidence timeline</div>
-          <h2 className="mt-1 text-lg font-semibold text-slate-900">{claim.statement}</h2>
+          <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            Evidence timeline
+          </div>
+          <h2 className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">
+            {claim.statement}
+          </h2>
         </div>
         <button
           data-overlay-close="true"
           type="button"
           onClick={onClose}
-          className="shrink-0 rounded border border-slate-300 px-2 py-1 text-sm text-slate-600 hover:bg-slate-50"
+          className="shrink-0 rounded border border-slate-300 px-2 py-1 text-sm text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800"
         >
           Close
         </button>
@@ -182,7 +191,7 @@ export function ClaimTimeline({ view, onClose }: { view: ClaimView; onClose: () 
           aria-controls={panelId("assessment")}
           tabIndex={tab === "assessment" ? 0 : -1}
           onClick={() => setTab("assessment")}
-          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium ring-inset transition ${meta.badge} ${
+          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium ring-inset transition ${meta.badge} ${meta.badgeDark} ${
             tab === "assessment" ? "ring-2" : "ring-1"
           }`}
         >
@@ -193,7 +202,7 @@ export function ClaimTimeline({ view, onClose }: { view: ClaimView; onClose: () 
 
       {tab === "questions" && (
         <div role="tabpanel" id={panelId("questions")} aria-labelledby={tabId("questions")}>
-          {recorded && <p className="mt-4 text-xs text-slate-500">{recorded}</p>}
+          {recorded && <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">{recorded}</p>}
           <ol className={LIST}>
             <Step
               kind="Claim"
@@ -230,17 +239,19 @@ export function ClaimTimeline({ view, onClose }: { view: ClaimView; onClose: () 
       {tab === "evidence" && (
         <div role="tabpanel" id={panelId("evidence")} aria-labelledby={tabId("evidence")}>
           {evidence.length === 0 ? (
-            <p className="mt-5 text-sm text-slate-500">No evidence items for this claim.</p>
+            <p className="mt-5 text-sm text-slate-500 dark:text-slate-400">
+              No evidence items for this claim.
+            </p>
           ) : (
             <ol className={LIST}>
               {evidence.map((e) => (
                 <Step key={e.id} kind={`Evidence · ${e.type.replaceAll("_", " ")}`} id={e.id}>
-                  <p className="text-xs text-slate-500">{e.source_label}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{e.source_label}</p>
                   <p className="mt-1 italic">“{e.excerpt}”</p>
                   <p className="mt-1">
                     <span className="font-medium">Shows:</span> {e.supports}
                   </p>
-                  <p className="mt-1 rounded bg-amber-50 px-2 py-1 text-amber-900">
+                  <p className="mt-1 rounded bg-amber-50 px-2 py-1 text-amber-900 dark:bg-amber-950/50 dark:text-amber-200">
                     <span className="font-medium">Limitation:</span> {e.limitations}
                   </p>
                 </Step>
@@ -260,22 +271,22 @@ export function ClaimTimeline({ view, onClose }: { view: ClaimView; onClose: () 
                 {rest && <span>{` ${rest}`}</span>}
               </p>
               {evidence.length === 0 ? (
-                <p className="mt-2 text-xs text-slate-600">{basedOn}</p>
+                <p className="mt-2 text-xs text-slate-600 dark:text-slate-400">{basedOn}</p>
               ) : (
                 <button
                   type="button"
                   onClick={() => setTab("evidence")}
-                  className="mt-2 text-xs text-slate-600 underline"
+                  className="mt-2 text-xs text-slate-600 underline dark:text-slate-400"
                 >
                   {basedOn}
                 </button>
               )}
               {assessment.unresolved_questions.length > 0 && (
                 <div className="mt-3">
-                  <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                     Unresolved questions for human review
                   </div>
-                  <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-slate-800">
+                  <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-slate-800 dark:text-slate-300">
                     {assessment.unresolved_questions.map((q) => (
                       <li key={q}>{q}</li>
                     ))}

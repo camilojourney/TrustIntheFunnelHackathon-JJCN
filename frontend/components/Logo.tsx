@@ -1,6 +1,15 @@
+import { cx } from "@/lib/cx";
+
 // A sage leaf with a check as its vein: the leaf says Sage, the check says the
-// claim was looked at. The same drawing is app/icon.svg.
-export function Logo({ className = "" }: { className?: string }) {
+// claim was looked at. The same drawing is app/icon.svg. The leaf keeps its
+// green in both themes; only the word follows the text color.
+export function Logo({
+  className = "",
+  printView = false,
+}: {
+  className?: string;
+  printView?: boolean;
+}) {
   return (
     <span className={`inline-flex items-center gap-2 ${className}`}>
       <svg
@@ -21,7 +30,9 @@ export function Logo({ className = "" }: { className?: string }) {
           strokeLinejoin="round"
         />
       </svg>
-      <span className="text-lg font-semibold tracking-tight text-slate-900">Sage</span>
+      <span className={cx("text-lg font-semibold tracking-tight text-slate-900", !printView && "dark:text-slate-100")}>
+        Sage
+      </span>
     </span>
   );
 }

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { DecisionSupportBanner } from "@/components/report/DecisionSupportBanner";
 import { CANDIDATES } from "@/lib/candidates";
 import { buildClaimViews } from "@/lib/join";
@@ -19,9 +20,14 @@ export default async function RecruiterQueue() {
 
   return (
     <main className="mx-auto w-full max-w-4xl space-y-6 px-4 py-8">
-      <header>
-        <Logo />
-        <h1 className="mt-1 text-2xl font-semibold text-slate-900">Review queue</h1>
+      <header className="flex items-start justify-between gap-3">
+        <div>
+          <Logo />
+          <h1 className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-100">
+            Review queue
+          </h1>
+        </div>
+        <ThemeToggle />
       </header>
       <DecisionSupportBanner />
       <ul className="space-y-3">
@@ -29,15 +35,16 @@ export default async function RecruiterQueue() {
           <li key={r.id}>
             <Link
               href={`/recruiter/${r.id}`}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm hover:border-slate-400"
+              className="flex flex-col gap-2 rounded-lg border border-slate-200 bg-white p-4 shadow-sm hover:border-slate-400 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-500"
             >
               <div>
-                <div className="font-medium text-slate-900">{r.name}</div>
-                <div className="text-sm text-slate-500">
+                <div className="font-medium text-slate-900 dark:text-slate-100">{r.name}</div>
+                <div className="text-sm text-slate-500 dark:text-slate-400">
                   {r.report.role_title} · {r.views.length} claims reviewed
                 </div>
               </div>
-              <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600">
+              {/* Its own line, so the counts sit under the name in every row. */}
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-600 dark:text-slate-400">
                 {STATUSES.map((s) => (
                   <span key={s} className="inline-flex items-center gap-1.5">
                     <span className={`h-2 w-2 rounded-full ${STATUS_META[s].dot}`} />
@@ -45,7 +52,9 @@ export default async function RecruiterQueue() {
                     {STATUS_META[s].label.toLowerCase()}
                   </span>
                 ))}
-                <span className="font-medium text-emerald-700">Open report →</span>
+                <span className="font-medium text-emerald-700 dark:text-emerald-400">
+                  Open report →
+                </span>
               </div>
             </Link>
           </li>

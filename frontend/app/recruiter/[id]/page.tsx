@@ -4,6 +4,7 @@ import { DecisionSupportBanner } from "@/components/report/DecisionSupportBanner
 import { PrintButton } from "@/components/report/PrintButton";
 import { ReportView } from "@/components/report/ReportView";
 import { SourceToggle } from "@/components/report/SourceToggle";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { candidateName } from "@/lib/candidates";
 import { getReport, wantedSource } from "@/lib/report";
 
@@ -25,27 +26,29 @@ export default async function RecruiterReport({
         <Logo />
         <Link
           href="/recruiter"
-          className="block text-sm text-emerald-700 hover:text-emerald-900 print:hidden"
+          className="block text-sm text-emerald-700 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-300 print:hidden"
         >
           ← All candidates
         </Link>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="text-2xl font-semibold text-slate-900">
+            <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
               {candidateName(report.candidate_id)}
             </h1>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-slate-600 dark:text-slate-400">
               Claim evidence report · {report.role_title}
             </p>
           </div>
-          {/* One row: Demo | Live, then Print and PDF. It never wraps in itself. */}
+          {/* One row: Demo | Live, Print and PDF, then the theme button at the
+              far right. It never wraps in itself. */}
           <div className="flex flex-col items-end gap-1">
             <div className="flex flex-nowrap items-center gap-2">
               <SourceToggle id={id} active={onScreen} />
               <PrintButton id={id} source={onScreen} />
+              <ThemeToggle />
             </div>
             {liveFailed && (
-              <p className="text-xs text-amber-700 print:hidden">
+              <p className="text-xs text-amber-700 dark:text-amber-200 print:hidden">
                 Live API not reachable. Showing demo data.
               </p>
             )}
