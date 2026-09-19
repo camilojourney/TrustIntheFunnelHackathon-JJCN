@@ -72,6 +72,29 @@ test("connected interview attaches evidence, creates report and trace, and reset
   await expect(page.getByRole("button", { name: "Start connected demo" })).toBeVisible();
   expect(errors).toEqual([]);
 });
+test("own pasted resume and cover letter create a fresh candidate with extracted claims and a dossier", async ({ page }) => {
+  test.setTimeout(120000);
+  const resume = "Priya Natarajan - Data Scientist\nGitHub: https://github.com/pnatarajan/churn-model\n\nProjects:\n- Built a churn model that lifted retention by 4 percentage points across 12,000 accounts.\n\nEducation:\n- M.S. in Statistics, Example University, 2021.";
+  await page.goto("/candidate");
+  await page.getByText("Use your own resume and cover letter instead of the demo").click();
+  await page.getByLabel("Role title").fill("Data Scientist");
+  await page.getByLabel("Resume text").fill(resume);
+  await page.getByLabel("Cover letter text").fill("I led the churn-model rollout end to end.");
+  await page.getByRole("checkbox").check();
+  await page.getByRole("button", { name: "Start connected demo" }).click();
+  await expect(page.getByText("Connected to the backend with your application text", { exact: false })).toBeVisible();
+  await expect(page.getByText("Priya Natarajan - Data Scientist", { exact: false }).first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Data Scientist" }).or(page.getByText("Data Scientist", { exact: true }).first())).toBeVisible();
+  await finish(page);
+  await page.getByRole("link", { name: "Open evidence report" }).click();
+  await expect(page).toHaveURL(/recruiter\/candidate-[0-9a-f]+\?source=live/);
+  await expect(page.getByText("Live API not reachable")).toBeHidden();
+  const consistency = page.getByRole("region", { name: "Source consistency" });
+  await expect(consistency.getByText("verifiable education record", { exact: false })).toBeVisible();
+  await page.goto("/candidate");
+  await page.getByRole("button", { name: "Reset demo" }).click();
+  await expect(page.getByRole("button", { name: "Start connected demo" })).toBeVisible();
+});
 test("offline rehearsal produces report from submitted answers and local trace", async ({ page }) => {
   await begin(page, "offline");
   await page.getByRole("button", { name: "Attach evidence" }).click();

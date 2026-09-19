@@ -16,6 +16,7 @@ class ApplicationModel(Base):
     id = Column(String, primary_key=True)
     candidate_id = Column(String, ForeignKey("candidates.candidate_id"), nullable=False)
     resume_text = Column(Text, default="")
+    cover_letter_text = Column(Text, nullable=True)
     role_title = Column(String, nullable=True)
     created_at = Column(String, nullable=True)
     identity_hints = Column(JSON, nullable=True)

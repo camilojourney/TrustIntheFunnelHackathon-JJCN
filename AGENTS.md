@@ -15,6 +15,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - The active candidate flow is `frontend/components/interview/ConnectedInterview.tsx`, presented by `SageInterviewView.tsx`. `frontend/lib/session-api.ts` calls the same-origin backend proxy. Candidate styles are scoped in `frontend/app/sage.css`; standalone `CandidateExperience.tsx` and its state machine remain as reference.
 - Person 4 integration, schemas, and verification commands are documented in `docs/person4-integration.md`.
 - The source-consistency layer (checks, outcomes, modes, and the rule that it never alters interview statuses or produces a score) is documented in `docs/consistency-layer.md`.
+- Application intake (paste, PDF/text upload, cover letter) and the optional Tavily, Solari, and PRISM integrations, including their fail-open rules, are documented in `docs/intake-and-sponsors.md`.
 - Validate with the scripts in `package.json`, including `npm run test:e2e` for the full candidate journey.
 
 ## Maintaining this file

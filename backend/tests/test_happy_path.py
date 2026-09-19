@@ -130,7 +130,12 @@ def test_happy_path(client):
     assert {question.id for question in report.questions} == set(seen_questions)
     assert len(report.answers) == len(submitted_transcripts)
     assert {answer.question_id: answer.transcript for answer in report.answers} == submitted_transcripts
-    assert report.evidence == [evidence]
+    # The attached artifact is present; any other item is a labeled public-context fixture, never a live claim.
+    assert evidence in report.evidence
+    for item in report.evidence:
+        if item != evidence:
+            assert item.source_label.startswith("Synthetic search fixture")
+            assert "does not verify" in item.limitations
     evidence_by_id = {item.id: item for item in report.evidence}
     for assessment in report.assessments:
         assert assessment.rationale.strip()

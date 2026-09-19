@@ -7,6 +7,10 @@ import { SageInterviewView } from "./SageInterviewView";
 
 const KEY = "claimproof-integrated-session-v1";
 type Event = { id: string; stage: string; status: string; created_at: string; details: Record<string, unknown> };
+export type EvidenceMode = "fixture" | "live" | "solari";
+// Optional own-application intake. Empty means the seeded fictional candidate.
+export type Intake = { resumeText: string; coverLetterText: string; roleTitle: string; resumeFile: File | null; coverLetterFile: File | null };
+export const EMPTY_INTAKE: Intake = { resumeText: "", coverLetterText: "", roleTitle: "", resumeFile: null, coverLetterFile: null };
 export type Session = {
   id: string; mode: "live" | "offline"; candidate: string; interview: string;
   claims: Claim[]; question: InterviewQuestion | null; report?: CandidateReport;
@@ -22,6 +26,21 @@ const sampleAnswers: Record<string, string> = {
 const ragFollowup = "Neo4j supplied graph relationships while vector retrieval found semantic matches for RAG. Across 200 evaluation queries, F1 improved by 2.75 percentage points. Dual writes increased indexing latency, so I would batch updates and rerun the evaluation.";
 function event(stage: string, details: Record<string, unknown> = {}): Event {
   return { id: crypto.randomUUID(), stage, status: "ok", created_at: new Date().toISOString(), details };
+}
+// Seeded candidate by default; pasted text or PDF/text uploads create a fresh candidate.
+async function createApplication(session: string, intake: Intake | null): Promise<{ candidate_id: string; application_id: string }> {
+  if (!intake) return api("applications", session, { use_seed: true });
+  if (intake.resumeFile) {
+    const data = new FormData();
+    data.append("resume", intake.resumeFile);
+    if (intake.coverLetterFile) data.append("cover_letter", intake.coverLetterFile);
+    if (intake.roleTitle.trim()) data.append("role_title", intake.roleTitle.trim());
+    const response = await fetch("/api/backend/applications/upload", { method: "POST", headers: { "X-Session-ID": session }, body: data });
+    const result = await response.json();
+    if (!response.ok) throw new Error(typeof result.detail === "string" ? result.detail : "Upload failed. Paste the text instead.");
+    return result;
+  }
+  return api("applications", session, { resume_text: intake.resumeText, cover_letter_text: intake.coverLetterText || null, role_title: intake.roleTitle || null });
 }
 function offlineConsistency(profile: ConsistencyProfile | null | undefined): ConsistencyProfile | null {
   if (!profile) return null;
@@ -43,7 +62,8 @@ export function ConnectedInterview() {
   const [consent, setConsent] = useState(false);
   const [notice, setNotice] = useState("");
   const [evidenceUrl, setEvidenceUrl] = useState("https://demo.claimproof.example/hybrid-rag");
-  const [evidenceMode, setEvidenceMode] = useState<"fixture" | "live">("fixture");
+  const [evidenceMode, setEvidenceMode] = useState<EvidenceMode>("fixture");
+  const [intake, setIntake] = useState<Intake>(EMPTY_INTAKE);
   const pending = useRef(false);
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -71,28 +91,35 @@ export function ConnectedInterview() {
       let claims = structuredClone(fixture.claims) as Claim[];
       let interview = "offline";
       let consistency: ConsistencyProfile | null = structuredClone(fixture.consistency) as ConsistencyProfile;
+      let candidate = "demo-candidate-1";
       const events: Event[] = [event("claim_extraction")];
+      const ownApplication = Boolean(intake.resumeText.trim() || intake.resumeFile);
       if (mode === "live") {
-        const app = await api<{ application_id: string }>("applications", id, { use_seed: true });
+        const app = await createApplication(id, ownApplication ? intake : null);
+        candidate = app.candidate_id;
         claims = await api<Claim[]>(`applications/${app.application_id}/extract-claims`, id, {});
         // The source scan is best-effort: a backend without fixtures or a failed
         // collector must not block the interview. Nothing is invented on failure.
         try {
-          consistency = await api<ConsistencyProfile>("candidates/demo-candidate-1/consistency-scan", id, { mode: "fixture" });
+          consistency = await api<ConsistencyProfile>(`candidates/${candidate}/consistency-scan`, id, { mode: "fixture" });
           events.push(event("consistency_scan", { checks: consistency.checks.length }));
         } catch {
           consistency = null;
           events.push({ ...event("consistency_scan"), status: "unavailable" });
         }
-        const created = await api<{ interview_id: string }>("interviews", id, { candidate_id: "demo-candidate-1", claim_ids: claims.map(c => c.id) });
+        const created = await api<{ interview_id: string }>("interviews", id, { candidate_id: candidate, claim_ids: claims.map(c => c.id) });
         interview = created.interview_id;
+      } else if (ownApplication) {
+        consistency = null;
       }
       const question = mode === "live"
         ? (await api<{ question: InterviewQuestion }>(`interviews/${interview}/next-question`, id)).question
         : offlineQuestion(claims[0]);
       events.push(event("question_generation", { claim_id: question.claim_id }));
-      save({ id, mode, candidate: "demo-candidate-1", interview, claims, question, questions: [question], answers: [], evidence: [], consistency, events });
-      setNotice(mode === "offline" ? "Offline rehearsal: answers stay in this browser. Assessments remain unresolved until reviewed." : "Connected to the backend. DEMO_MODE uses deterministic model fixtures.");
+      save({ id, mode, candidate, interview, claims, question, questions: [question], answers: [], evidence: [], consistency, events });
+      setNotice(mode === "offline"
+        ? `Offline rehearsal: answers stay in this browser. Assessments remain unresolved until reviewed.${ownApplication ? " Your own application text is not used offline; the seeded claims are shown." : ""}`
+        : ownApplication ? "Connected to the backend with your application text. Claims below were extracted from it." : "Connected to the backend. DEMO_MODE uses deterministic model fixtures.");
     });
   }
   async function submit() {
@@ -133,13 +160,15 @@ export function ConnectedInterview() {
     if (!session) return;
     await run(async () => {
       let evidence: EvidenceItem;
-      if (session.mode === "live") evidence = await api<EvidenceItem>("claims/claim-rag-pipeline/collect-evidence", session.id, { url: evidenceUrl, mode: evidenceMode });
+      // The fixture belongs to the seeded RAG claim; live and Solari retrieval attach to the claim being discussed.
+      const target = evidenceMode === "fixture" ? "claim-rag-pipeline" : (session.question?.claim_id ?? session.claims[0]?.id ?? "claim-rag-pipeline");
+      if (session.mode === "live") evidence = await api<EvidenceItem>(`claims/${target}/collect-evidence`, session.id, { url: evidenceUrl, mode: evidenceMode });
       else {
         if (evidenceMode !== "fixture" || evidenceUrl !== "https://demo.claimproof.example/hybrid-rag") throw new Error("Offline rehearsal supports only the controlled fixture.");
         evidence = structuredClone(fixture.evidence.find(e => e.id === "ev-a3")!) as EvidenceItem;
       }
       save({ ...session, evidence: [...session.evidence, evidence], events: [...session.events, event("evidence_collection", { mode: evidenceMode })] });
-      setNotice("Evidence attached to the RAG claim with its limitations.");
+      setNotice(evidenceMode === "fixture" ? "Evidence attached to the RAG claim with its limitations." : `Evidence attached to the current claim via ${evidenceMode === "solari" ? "a Solari browser" : "direct retrieval"}, with its limitations.`);
     });
   }
   async function reset() {
@@ -147,7 +176,7 @@ export function ConnectedInterview() {
       if (session?.mode === "live") await api("demo/reset", session.id, {});
       if (session) localStorage.removeItem(`claimproof-trace-${session.id}`);
       localStorage.removeItem(KEY); localStorage.removeItem("claimproof-offline-report");
-      setSession(null); setDraft(""); setOriginal(null); setNotice(""); setConsent(false);
+      setSession(null); setDraft(""); setOriginal(null); setNotice(""); setConsent(false); setIntake(EMPTY_INTAKE);
     });
   }
   async function transcribe(blob: Blob) {
@@ -164,13 +193,16 @@ export function ConnectedInterview() {
   return <SageInterviewView
     session={session} busy={busy} error={error} notice={notice}
     consent={consent} draft={draft} original={original}
-    evidenceUrl={evidenceUrl} evidenceMode={evidenceMode}
+    evidenceUrl={evidenceUrl} evidenceMode={evidenceMode} intake={intake} setIntake={setIntake}
     setConsent={setConsent} setDraft={setDraft} setOriginal={setOriginal}
     setNotice={setNotice} setEvidenceUrl={setEvidenceUrl} setEvidenceMode={setEvidenceMode}
     start={start} submit={submit} attach={attach} reset={reset} transcribe={transcribe}
     useExample={() => {
       if (!session?.question || !claim) return;
-      setDraft(session.question.kind === "follow_up" && claim.id === "claim-rag-pipeline" ? ragFollowup : sampleAnswers[claim.id]);
+      // Own-application claims reuse seeded ids with a suffix, so match by prefix; otherwise fall back to a generic example.
+      const key = Object.keys(sampleAnswers).find(k => claim.id === k || claim.id.startsWith(`${k}-`));
+      const generic = `I worked on ${claim.entities[0] ?? "this"}: here is how it was built, how it was measured, and which part I personally owned.`;
+      setDraft(session.question.kind === "follow_up" && key === "claim-rag-pipeline" ? ragFollowup : key ? sampleAnswers[key] : generic);
       setNotice("Example answer inserted for the fictional demo. It is not a real candidate response.");
     }}
   />;

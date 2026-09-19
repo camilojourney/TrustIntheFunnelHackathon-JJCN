@@ -119,6 +119,8 @@ class CandidateReport(BaseModel):
 
 class ApplicationCreateRequest(BaseModel):
     resume_text: str | None = None
+    cover_letter_text: str | None = None
+    role_title: str | None = None
     use_seed: bool = False
 
 

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import fixture from "@fixtures/report.json";
-import type { Session } from "./ConnectedInterview";
+import type { EvidenceMode, Intake, Session } from "./ConnectedInterview";
 import { MicrophoneCapture } from "./MicrophoneCapture";
 
 interface Props {
@@ -15,13 +15,15 @@ interface Props {
   draft: string;
   original: string | null;
   evidenceUrl: string;
-  evidenceMode: "fixture" | "live";
+  evidenceMode: EvidenceMode;
+  intake: Intake;
+  setIntake: (value: Intake) => void;
   setConsent: (value: boolean) => void;
   setDraft: (value: string) => void;
   setOriginal: (value: string) => void;
   setNotice: (value: string) => void;
   setEvidenceUrl: (value: string) => void;
-  setEvidenceMode: (value: "fixture" | "live") => void;
+  setEvidenceMode: (value: EvidenceMode) => void;
   start: (mode: "live" | "offline") => Promise<void>;
   submit: () => Promise<void>;
   attach: () => Promise<void>;
@@ -79,7 +81,9 @@ export function SageInterviewView(props: Props) {
   const question = session?.question;
   const claim = session?.claims.find(item => item.id === question?.claim_id);
   const claimIndex = session?.claims.findIndex(item => item.id === claim?.id) ?? 0;
-  const progress = session?.report ? 100 : Math.round(claimIndex / 3 * 100);
+  const claimCount = Math.max(1, session?.claims.length ?? 3);
+  const progress = session?.report ? 100 : Math.round(claimIndex / claimCount * 100);
+  const roleTitle = session?.report?.role_title || (session && session.candidate !== "demo-candidate-1" ? props.intake.roleTitle || "Your application" : "Machine Learning Engineer");
   return <div className="app-frame sage-app integrated-sage">
     <a className="skip-link" href="#main-content">Skip to main content</a>
     <header className="sage-header">
@@ -111,6 +115,18 @@ export function SageInterviewView(props: Props) {
       <aside className="welcome-side">
         <div className="sage-intro-card"><div className="sage-orb" aria-hidden="true"><i /><i /><span>S</span></div><div><span>Your interviewer</span><h2>Sage</h2><p>Curious about the details behind your work.</p></div></div>
         <div className="topic-preview"><span>Conversation threads · fictional demo</span>{fixture.claims.map((item, index) => <div key={item.id}><b>0{index + 1}</b><p>{item.source_excerpt}<small>From the seeded resume</small></p></div>)}</div>
+        <details className="own-application" data-testid="own-application">
+          <summary>Use your own resume and cover letter instead of the demo</summary>
+          <p>Paste text or upload PDF/.txt files. Text is extracted and kept with this local demo session; files are not stored. The connected demo then extracts claims from your documents; offline rehearsal keeps the seeded claims.</p>
+          <label>Role you are applying for<input aria-label="Role title" value={props.intake.roleTitle} onChange={e => props.setIntake({ ...props.intake, roleTitle: e.target.value })} placeholder="Machine Learning Engineer" /></label>
+          <label>Resume text<textarea aria-label="Resume text" rows={5} value={props.intake.resumeText} onChange={e => props.setIntake({ ...props.intake, resumeText: e.target.value })} placeholder="Paste your resume text" /></label>
+          <label>Cover letter text (optional)<textarea aria-label="Cover letter text" rows={3} value={props.intake.coverLetterText} onChange={e => props.setIntake({ ...props.intake, coverLetterText: e.target.value })} placeholder="Paste your cover letter" /></label>
+          <div className="own-files">
+            <label>Resume file<input aria-label="Resume file" type="file" accept=".pdf,.txt,.md,application/pdf,text/plain" onChange={e => props.setIntake({ ...props.intake, resumeFile: e.target.files?.[0] ?? null })} /></label>
+            <label>Cover letter file<input aria-label="Cover letter file" type="file" accept=".pdf,.txt,.md,application/pdf,text/plain" onChange={e => props.setIntake({ ...props.intake, coverLetterFile: e.target.files?.[0] ?? null })} /></label>
+          </div>
+          {(props.intake.resumeText.trim() || props.intake.resumeFile) && <small>Your application will be used for the connected demo. {props.intake.resumeFile ? `File: ${props.intake.resumeFile.name}` : "Pasted text"}{props.intake.coverLetterFile || props.intake.coverLetterText.trim() ? " · cover letter included" : ""}</small>}
+        </details>
         <label className="interview-consent"><input type="checkbox" checked={consent} onChange={e => props.setConsent(e.target.checked)} /><span><strong>I understand how the demo uses my answers.</strong><small>Connected answers are saved to the local backend; offline answers stay in this browser. Voice and text are equal options. Camera is an optional local preview and is never recorded or assessed.</small></span></label>
         <div className="welcome-actions"><button className="button button-primary" disabled={busy || !consent} onClick={() => props.start("live")}>Start connected demo</button><button className="button button-light" disabled={busy || !consent} onClick={() => props.start("offline")}>Start offline rehearsal</button></div>
       </aside>
@@ -118,11 +134,11 @@ export function SageInterviewView(props: Props) {
       <aside className="sage-panel" aria-label="Sage, your interview guide">
         <div className="sage-large-orb" aria-hidden="true"><i /><i /><i /><span>S</span></div><span className="sage-name">Sage</span><p>Your ClaimProof interviewer</p>
         <div className="sage-state"><i />Here with you</div>
-        <div className="sage-progress"><div><span>Claim progress</span><strong>{claimIndex + 1} of 3</strong></div><div><i style={{ width: `${progress}%` }} /></div></div>
+        <div className="sage-progress"><div><span>Claim progress</span><strong>{claimIndex + 1} of {session.claims.length}</strong></div><div><i style={{ width: `${progress}%` }} /></div></div>
         <p className="sage-assurance">Sage responds to answer content only. No visual, vocal, or behavioral signals are assessed.</p>
       </aside>
       <section className="interview-conversation">
-        <header className="interview-topbar"><div><span>{session.mode === "live" ? "Connected session" : "Offline rehearsal · simulated flow"}</span><strong>Machine Learning Engineer</strong></div><div><span>Claim</span><strong>{claimIndex + 1} of 3</strong></div></header>
+        <header className="interview-topbar"><div><span>{session.mode === "live" ? "Connected session" : "Offline rehearsal · simulated flow"}</span><strong>{roleTitle}</strong></div><div><span>Claim</span><strong>{claimIndex + 1} of {session.claims.length}</strong></div></header>
         <div className="sage-history" aria-label="Conversation transcript">{session.answers.map(answer => {
           const asked = session.questions.find(item => item.id === answer.question_id);
           return <article key={answer.id}><div className="history-speaker sage"><span>S</span><p><strong>Sage</strong>{asked?.text}</p></div><div className="history-speaker candidate"><span>You</span><p><strong>You</strong>{answer.transcript}</p></div></article>;
@@ -137,12 +153,12 @@ export function SageInterviewView(props: Props) {
             <div className="answer-actions"><button className="button button-primary" disabled={busy || !draft.trim()} onClick={() => props.setOriginal(draft)}>Review answer</button><button className="text-action" disabled={busy} onClick={props.useExample}>Use example answer</button></div>
           </> : <><p className="original-transcript">Original transcript: {original}</p><div className="sage-answer-field"><label htmlFor="reviewed-answer">Correct transcript before submitting</label><textarea id="reviewed-answer" rows={5} disabled={busy} value={draft} onChange={e => props.setDraft(e.target.value)} /></div><button className="button button-primary" disabled={busy || !draft.trim()} onClick={props.submit}>Submit reviewed answer</button></>}
         </article>
-        <section className="sage-evidence"><h2>Supporting evidence for the RAG claim</h2><p>The controlled artifact is fictional. Live retrieval requires an approved public host.</p><a href="/demo-artifact" target="_blank">Inspect synthetic artifact</a><div className="evidence-controls"><select aria-label="Evidence mode" value={props.evidenceMode} onChange={e => props.setEvidenceMode(e.target.value as "fixture" | "live")}><option value="fixture">Synthetic fixture</option><option value="live">Live public page</option></select><input aria-label="Evidence URL" value={props.evidenceUrl} onChange={e => props.setEvidenceUrl(e.target.value)} /><button className="button button-dark" disabled={busy} onClick={props.attach}>Attach evidence</button></div>{session.evidence.map(item => <p key={item.id}>{item.source_label}: {item.limitations}</p>)}</section>
+        <section className="sage-evidence"><h2>{props.evidenceMode === "fixture" ? "Supporting evidence for the RAG claim" : "Supporting evidence for the current claim"}</h2><p>The controlled artifact is fictional. Live and Solari retrieval require an approved public host; a Solari browser renders the page in the cloud and returns only its text.</p><a href="/demo-artifact" target="_blank">Inspect synthetic artifact</a><div className="evidence-controls"><select aria-label="Evidence mode" value={props.evidenceMode} onChange={e => props.setEvidenceMode(e.target.value as EvidenceMode)}><option value="fixture">Synthetic fixture</option><option value="live">Live public page</option><option value="solari">Solari browser</option></select><input aria-label="Evidence URL" value={props.evidenceUrl} onChange={e => props.setEvidenceUrl(e.target.value)} /><button className="button button-dark" disabled={busy} onClick={props.attach}>Attach evidence</button></div>{session.evidence.map(item => <p key={item.id}>{item.source_label}: {item.limitations}</p>)}</section>
       </section>
-      <aside className="candidate-rail"><CameraPreview /><div className="candidate-card"><span>Candidate application</span><strong>Machine Learning Engineer</strong><small>Fictional demo · three claims</small></div><details className="source-claims"><summary>Review all three source claims</summary>{session.claims.map(item => <blockquote key={item.id}>{item.source_excerpt}</blockquote>)}</details><details className="source-claims" data-testid="sources-inspected"><summary>Sources we check alongside your answers</summary>{session.consistency ? <>{Array.from(new Map(session.consistency.checks.filter(c => c.source_url || c.kind === "application_history" || c.kind === "education_web").map(c => [c.source_label, c])).values()).map(c => <blockquote key={c.id}>{c.source_url ? <a href={c.source_url} target="_blank" rel="noreferrer">{c.source_label}</a> : c.source_label}<small> · {c.mode === "fixture" ? "fictional fixture" : c.mode === "live" ? "public page" : "your application"}</small></blockquote>)}<p>Checks compare public text with your application. They add questions for the recruiter; they never score you or decide an outcome. Flag a wrong link to a human reviewer.</p></> : <p>No sources were checked for this session.</p>}</details><div className="session-guardrails"><span>Session guardrails</span><p>Camera preview stays local</p><p>Voice and text are equal</p><p>No behavioral analysis</p></div></aside>
+      <aside className="candidate-rail"><CameraPreview /><div className="candidate-card"><span>Candidate application</span><strong>{roleTitle}</strong><small>{session.candidate === "demo-candidate-1" ? "Fictional demo" : "Your application"} · {session.claims.length} claims</small></div><details className="source-claims"><summary>Review all {session.claims.length} source claims</summary>{session.claims.map(item => <blockquote key={item.id}>{item.source_excerpt}</blockquote>)}</details><details className="source-claims" data-testid="sources-inspected"><summary>Sources we check alongside your answers</summary>{session.consistency ? <>{Array.from(new Map(session.consistency.checks.filter(c => c.source_url || c.kind === "application_history" || c.kind === "education_web").map(c => [c.source_label, c])).values()).map(c => <blockquote key={c.id}>{c.source_url ? <a href={c.source_url} target="_blank" rel="noreferrer">{c.source_label}</a> : c.source_label}<small> · {c.mode === "fixture" ? "fictional fixture" : c.mode === "live" ? "public page" : "your application"}</small></blockquote>)}<p>Checks compare public text with your application. They add questions for the recruiter; they never score you or decide an outcome. Flag a wrong link to a human reviewer.</p></> : <p>No sources were checked for this session.</p>}</details><div className="session-guardrails"><span>Session guardrails</span><p>Camera preview stays local</p><p>Voice and text are equal</p><p>No behavioral analysis</p></div></aside>
     </main> : <main className="thank-you-shell" id="main-content">
       <section className="thank-you-hero"><p className="step-label">Conversation complete</p><h1>Conversation complete</h1><p>Thank you for sharing the work behind your application. Your answers and supporting evidence are ready for review.</p></section>
-      <section className="handoff-card"><div className="handoff-heading"><div><p className="step-label">Transparent handoff</p><h2>What the recruiter receives</h2></div><span>{session.answers.length} answers · 3 claims</span></div><div className="handoff-grid"><div><span>Included</span><ul><li>Application claims and their sources</li><li>Questions and reviewed answer transcripts</li><li>Evidence, limitations, and unresolved questions</li></ul></div><div><span>Never included</span><ul><li>Camera preview or images</li><li>Facial, vocal, or behavioral analysis</li><li>An honesty or hiring score</li></ul></div></div></section>
+      <section className="handoff-card"><div className="handoff-heading"><div><p className="step-label">Transparent handoff</p><h2>What the recruiter receives</h2></div><span>{session.answers.length} answers · {session.claims.length} claims</span></div><div className="handoff-grid"><div><span>Included</span><ul><li>Application claims and their sources</li><li>Questions and reviewed answer transcripts</li><li>Evidence, limitations, and unresolved questions</li></ul></div><div><span>Never included</span><ul><li>Camera preview or images</li><li>Facial, vocal, or behavioral analysis</li><li>An honesty or hiring score</li></ul></div></div></section>
       <section className="thank-you-footer"><p>{session.mode === "live" ? "Your report is saved to the local backend." : "Offline rehearsal: your answers are saved in this browser and remain unassessed."}</p><Link className="button button-primary" href={session.mode === "live" ? `/recruiter/${session.candidate}?source=live&session=${session.id}` : `/recruiter/offline?session=${session.id}`}>Open evidence report</Link></section>
     </main>}
   </div>;

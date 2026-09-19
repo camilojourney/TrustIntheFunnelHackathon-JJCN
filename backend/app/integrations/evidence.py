@@ -45,6 +45,18 @@ def collect_evidence(url: str, mode: str) -> dict:
     allowed = {host.strip().lower() for host in os.getenv("EVIDENCE_ALLOWED_HOSTS", "").split(",") if host.strip()}
     if parsed.scheme != "https" or parsed.hostname not in allowed or parsed.username or parsed.password or parsed.port not in (None, 443):
         raise CollectionError("Live retrieval requires an HTTPS URL on EVIDENCE_ALLOWED_HOSTS")
+    if mode == "solari":
+        # Same allowlist and truthfulness rules; only the transport differs. A Solari failure
+        # never falls back to a direct fetch, so the source label stays accurate.
+        from app.integrations.solari import fetch_page_text
+
+        page = fetch_page_text(url)
+        excerpt = " ".join(page["text"].split())[:2000]
+        if not excerpt:
+            raise CollectionError("Source contained no readable text")
+        return dict(type="external_artifact", source_label=f"Public page via Solari browser: {parsed.hostname}", source_url=url,
+                    excerpt=excerpt, supports="This text was rendered on the supplied page in a Solari cloud browser when retrieved.",
+                    limitations="Page content is untrusted and may be incomplete. Claims and benchmarks were not independently verified. Artifact existence does not prove candidate authorship.")
     try:
         addresses = socket.getaddrinfo(parsed.hostname, 443, type=socket.SOCK_STREAM)
         if not addresses or any(not ipaddress.ip_address(row[4][0]).is_global for row in addresses):

@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app import config
 from app.db import get_db
 from app.models import ClaimModel, TraceEventModel
+from app.integrations import solari
 from app.integrations.evidence import collect_evidence, CollectionError
 from app.integrations.prism import is_configured as prism_is_configured
 from app.routes.evidence import add_evidence, EvidenceCreateRequest
@@ -19,7 +20,8 @@ router = APIRouter()
 
 class CollectRequest(BaseModel):
     url: str
-    mode: Literal["fixture", "live"] = "fixture"
+    # "live" is a direct bounded fetch; "solari" renders the same allowlisted page in a Solari browser.
+    mode: Literal["fixture", "live", "solari"] = "fixture"
 
 
 @router.post("/api/claims/{claim_id}/collect-evidence")
@@ -29,6 +31,9 @@ def collect(claim_id: str, payload: CollectRequest, db: Session = Depends(get_db
         raise HTTPException(404, "Claim not found")
     if payload.mode == "fixture" and (not config.DEMO_MODE or claim.candidate_id != "demo-candidate-1" or claim_id != "claim-rag-pipeline"):
         raise HTTPException(400, "Synthetic evidence is restricted to the seeded RAG demo claim")
+    if payload.mode == "solari" and not solari.is_configured():
+        record_event(db, "evidence_collection", claim.candidate_id, status="unavailable", claim_id=claim_id, mode=payload.mode)
+        raise HTTPException(422, "Solari is not configured (SOLARI_API_KEY); no evidence collected")
     try:
         item = collect_evidence(payload.url, payload.mode)
     except (CollectionError, ValueError) as exc:

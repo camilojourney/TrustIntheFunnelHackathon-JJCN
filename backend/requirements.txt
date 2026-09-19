@@ -9,3 +9,6 @@ google-generativeai
 python-multipart
 sqlalchemy
 alembic
+pypdf
+# Solari cloud-browser retrieval connects over CDP; no local browser download is needed.
+playwright
