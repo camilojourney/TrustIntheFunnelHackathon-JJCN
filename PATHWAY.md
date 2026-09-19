@@ -189,7 +189,9 @@ Expect a question object with a `claim_id` matching one of the submitted claims.
 
 ## Prompt 6 — Answers and adaptive follow-up
 
-**Goal:** `POST /api/interviews/{id}/answers` storing a transcript and generating one follow-up.
+**Goal:** `POST /api/interviews/{id}/answers` storing a transcript and *optionally* generating one follow-up.
+
+**Interview model note:** the opening questions are a fixed set (one per selected claim), but administration is dynamic per answer: after each opening answer, the system decides whether to ask **at most one** follow-up before moving to the next claim's opening question. A follow-up is never guaranteed — skip it when the answer already covers the claim adequately.
 
 **Context to paste into Codex:** `backend/app/routes/interviews.py`.
 
@@ -197,8 +199,10 @@ Expect a question object with a `claim_id` matching one of the submitted claims.
 ```
 In backend/app/routes/interviews.py, add POST /api/interviews/{id}/answers:
 - Accepts question_id and transcript, stores an InterviewAnswer.
-- If the answered question was "opening" for the current claim, generate exactly one "follow_up" InterviewQuestion via the LLM client, prompted with the claim statement, the opening question, and this transcript, asking for a specific unaddressed detail. Validate schema; on failure fall back to a generic templated follow-up referencing the claim category.
-- If the answered question was already a "follow_up", advance the interview to the next claim (or mark completed if none remain).
+- If the answered question was "opening" for the current claim, call the LLM client to decide whether a follow-up is warranted: ask it to judge whether the answer already covers the claim's key specifics (numbers, mechanism, trade-offs) or leaves a material gap. Response must include a boolean `needs_follow_up` plus, only when true, a "follow_up" InterviewQuestion targeting the specific unaddressed detail.
+  - If `needs_follow_up` is true: validate the question schema (retry once on failure, then a generic templated follow-up referencing the claim category); store it and return it. At most one follow-up is ever asked per claim — never chain a second one.
+  - If `needs_follow_up` is false (or generation fails and no safe fallback question is warranted): advance directly to the next claim (or mark completed if none remain), skipping the follow-up.
+- If the answered question was already a "follow_up", advance the interview to the next claim (or mark completed if none remain) — a claim gets at most one opening + at most one follow-up, never more.
 Response shape: { "next_action": "follow_up" | "next_claim" | "completed", "question": InterviewQuestion | null }.
 ```
 
@@ -208,7 +212,7 @@ Response shape: { "next_action": "follow_up" | "next_claim" | "completed", "ques
 ```bash
 curl -X POST localhost:8000/api/interviews/<id>/answers -d '{"question_id":"<qid>","transcript":"I used Neo4j for graph retrieval and FAISS for vectors, evaluated on 200 queries with F1 improving 2.75 points, though indexing time increased due to dual-write overhead."}' -H 'Content-Type: application/json'
 ```
-Expect `next_action: "follow_up"` with a question referencing the transcript's content (e.g. latency/indexing).
+Expect `next_action: "follow_up"` with a question referencing the transcript's content (e.g. latency/indexing) for this under-specified answer, and `next_action: "next_claim"` (no follow-up) for a separate test answer that already fully covers a claim's specifics.
 
 ---
 
