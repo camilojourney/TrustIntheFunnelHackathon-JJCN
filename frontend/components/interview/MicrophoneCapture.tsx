@@ -36,6 +36,7 @@ interface MicrophoneCaptureProps {
   onTranscript: (transcript: string) => void;
   onFallbackToText: (message: string) => void;
   onAudio?: (blob: Blob) => void;
+  disabled?: boolean;
 }
 
 export function MicrophoneCapture({
@@ -43,6 +44,7 @@ export function MicrophoneCapture({
   onTranscript,
   onFallbackToText,
   onAudio,
+  disabled = false,
 }: MicrophoneCaptureProps) {
   const [recording, setRecording] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -58,6 +60,10 @@ export function MicrophoneCapture({
   useEffect(
     () => () => {
       recognitionRef.current?.stop();
+      if (recorderRef.current) {
+        recorderRef.current.onstop = null;
+        if (recorderRef.current.state === "recording") recorderRef.current.stop();
+      }
       streamRef.current?.getTracks().forEach((track) => track.stop());
     },
     [],
@@ -71,7 +77,9 @@ export function MicrophoneCapture({
     streamRef.current = null;
     recorderRef.current = null;
     setRecording(false);
-    if (!transcriptRef.current.trim()) {
+    if (onAudio) {
+      setMessage("Recording stopped. The transcript will appear below when it is ready.");
+    } else if (!transcriptRef.current.trim()) {
       setMessage(
         "Audio capture stopped, but live transcription is not available here. Type your answer below to continue.",
       );
@@ -92,7 +100,8 @@ export function MicrophoneCapture({
       recorder.onstop = () => { if (chunks.length && onAudio) onAudio(new Blob(chunks, { type: recorder.mimeType })); };
       recorderRef.current.start();
 
-      const Recognition = recognitionConstructor();
+      // The connected flow transcribes the recording once through the backend.
+      const Recognition = onAudio ? undefined : recognitionConstructor();
       if (Recognition) {
         const recognition = new Recognition();
         recognition.continuous = true;
@@ -110,11 +119,17 @@ export function MicrophoneCapture({
         setMessage("Listening. A live transcript will appear below.");
       } else {
         setMessage(
+          onAudio ? "Recording audio. Stop recording to transcribe and review your answer." :
           "Recording audio. Live transcription is unavailable in this browser, so you can type the transcript below.",
         );
       }
       setRecording(true);
     } catch (error) {
+      if (recorderRef.current) {
+        recorderRef.current.onstop = null;
+        if (recorderRef.current.state === "recording") recorderRef.current.stop();
+      }
+      streamRef.current?.getTracks().forEach((track) => track.stop());
       const failure = classifyMicrophoneError(error);
       const fallbackMessage =
         failure === "denied"
@@ -133,11 +148,12 @@ export function MicrophoneCapture({
         </span>
         <div>
           <strong>{recording ? "Microphone recording" : "Ready to speak"}</strong>
-          <p>Only microphone audio is requested. Camera access is never requested.</p>
+          <p>Records microphone audio only. Camera preview is separate and optional.</p>
         </div>
         <button
           className={recording ? "button button-stop" : "button button-dark"}
           type="button"
+          disabled={disabled}
           onClick={recording ? stopRecording : startRecording}
         >
           {recording ? "Stop recording" : "Start microphone"}

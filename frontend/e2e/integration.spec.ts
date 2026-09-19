@@ -18,6 +18,8 @@ async function finish(page: Page) {
   await expect(page.getByRole("heading", { name: "Conversation complete" })).toBeVisible();
 }
 test("connected interview attaches evidence, creates report and trace, and resets", async ({ page }) => {
+  // Includes the queue, legacy report URL, and print route compiling on first visit.
+  test.setTimeout(120000);
   const errors: string[] = []; page.on("pageerror", e => errors.push(e.message));
   await begin(page, "connected");
   await page.getByRole("button", { name: "Attach evidence" }).click();
@@ -29,8 +31,31 @@ test("connected interview attaches evidence, creates report and trace, and reset
   const statuses = await page.evaluate(() => JSON.parse(localStorage.getItem("claimproof-integrated-session-v1")!).report.assessments.map((a: { status: string }) => a.status).sort());
   expect(statuses).toEqual(["demonstrated", "partially_demonstrated", "unresolved"]);
   await page.getByRole("link", { name: "Open evidence report" }).click();
-  await expect(page.getByRole("heading", { name: "Claim evidence report" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Alex Rivera", exact: true })).toBeVisible();
   await expect(page.getByText("Live API not reachable")).toBeHidden();
+  await page.getByRole("button", { name: "Your next step: No decision yet", exact: true }).click();
+  await page.getByRole("menuitemradio", { name: "Advance to interview" }).click();
+  await page.getByRole("button", { name: "Details", exact: true }).first().click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toBeHidden();
+  const reportUrl = page.url();
+  await page.getByRole("link", { name: "All candidates", exact: false }).click();
+  await expect(page.getByRole("listitem")).toHaveCount(4);
+  await page.getByRole("group", { name: "Filter by next step" }).getByRole("button", { name: "Advance", exact: true }).click();
+  await expect(page.getByRole("listitem")).toHaveCount(1);
+  await page.getByRole("link", { name: "Alex Rivera", exact: true }).click();
+  await expect(page).toHaveURL(/recruiter\/demo-candidate-1$/);
+  await expect(page.getByRole("link", { name: "Open session execution trace" })).toBeVisible();
+  await page.goto("/recruiter/demo?source=live");
+  await expect(page.getByText("Live API not reachable")).toBeHidden();
+  await expect(page.getByRole("button", { name: "Your next step: Advance to interview", exact: true })).toBeVisible();
+  await page.goto("/recruiter/demo/print?source=live");
+  await expect(page.getByRole("heading", { name: "Alex Rivera", exact: true })).toBeVisible();
+  await expect(page.getByText("Data source: live API")).toBeVisible();
+  await page.goto(reportUrl);
+  // Wait for browser-saved state to hydrate before interacting after a full navigation.
+  await expect(page.getByRole("button", { name: "Your next step: Advance to interview", exact: true })).toBeVisible();
   await page.screenshot({ path: "test-results/person4-report.png", fullPage: true });
   await page.getByRole("link", { name: "Open session execution trace" }).click();
   await expect(page.getByText("assessment generation", { exact: true })).toBeVisible();

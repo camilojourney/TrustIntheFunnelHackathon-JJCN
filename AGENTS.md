@@ -12,7 +12,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 - Candidate experience product boundaries are documented in `research/gpt-deepresearch/2026-09-19-candidate-experience-screen-consent.md`.
 - The single Next.js application lives in `frontend/`; root npm scripts forward there. Read bundled Next.js guides under `frontend/node_modules/next/dist/docs/`.
-- The active candidate flow is `frontend/components/interview/ConnectedInterview.tsx`. `frontend/lib/session-api.ts` calls the same-origin backend proxy; earlier standalone candidate components remain as reference.
+- The active candidate flow is `frontend/components/interview/ConnectedInterview.tsx`, presented by `SageInterviewView.tsx`. `frontend/lib/session-api.ts` calls the same-origin backend proxy. Candidate styles are scoped in `frontend/app/sage.css`; standalone `CandidateExperience.tsx` and its state machine remain as reference.
 - Person 4 integration, schemas, and verification commands are documented in `docs/person4-integration.md`.
 - Validate with the scripts in `package.json`, including `npm run test:e2e` for the full candidate journey.
 

@@ -1,0 +1,9 @@
+{
+  "id": "draft_evidence_throughput_fixture",
+  "claim_id": "draft_claim_throughput_10x",
+  "type": "document_excerpt",
+  "source_label": "Synthetic local benchmark fixture — manually authored; not live-collected",
+  "excerpt": "Baseline: 100 requests/second. Optimized: 250 requests/second.",
+  "supports": "The illustrative figures yield a throughput ratio of 250 / 100 = 2.5. They provide a controlled example for asking how the claimed 10× result was measured.",
+  "limitations": "All figures are fictional and no benchmark was run. This item was manually authored rather than collected by Solari. No real candidate, project, authorship, or achievement is verified. Different experimental conditions could explain differing ratios; request clarification before drawing a conclusion."
+}

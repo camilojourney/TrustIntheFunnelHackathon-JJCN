@@ -1,16 +1,32 @@
 "use client";
 
 import type { ClaimView } from "@/lib/join";
+import { cx } from "@/lib/cx";
 import { STATUS_META } from "@/lib/status";
 import { splitLead } from "@/lib/summarize";
 import { AnswerBlock, QuestionBlock } from "./Exchange";
 import { EvidenceList } from "./EvidenceList";
 import { StatusBadge } from "./StatusBadge";
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+// Shared with ClaimDetailsModal, so the card body and the modal body cannot
+// drift apart.
+export function Section({
+  title,
+  children,
+  printView = false,
+}: {
+  title: string;
+  children: React.ReactNode;
+  printView?: boolean;
+}) {
   return (
     <section>
-      <h4 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+      <h4
+        className={cx(
+          "mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500",
+          !printView && "dark:text-slate-400",
+        )}
+      >
         {title}
       </h4>
       {children}
@@ -28,14 +44,12 @@ function plural(n: number, one: string, many: string) {
 
 export function ClaimCard({
   view,
-  expanded,
-  onToggle,
+  onOpenDetails,
   onOpenTimeline,
   printView = false,
 }: {
   view: ClaimView;
-  expanded: boolean;
-  onToggle: () => void;
+  onOpenDetails: (trigger: HTMLElement) => void;
   onOpenTimeline: (trigger: HTMLElement) => void;
   printView?: boolean;
 }) {
@@ -44,19 +58,25 @@ export function ClaimCard({
   const other = evidence.filter((e) => e.type !== "external_artifact");
   const bodyId = `claim-body-${claim.id}`;
 
-  // Collapsed keeps the card short so two claims fit on one screen. The full
-  // body stays in the DOM and prints, so a printed report is never partial.
-  const clamp = expanded ? "" : "line-clamp-2 print:line-clamp-none";
+  // The card is one height on screen: Details opens a modal, the card never
+  // grows. The full body stays in the DOM and prints, so a printed report is
+  // never partial.
+  const clamp = printView ? "" : "line-clamp-2 print:line-clamp-none";
   const { lead, rest } = splitLead(assessment.rationale);
 
   return (
     <article
       data-record-id={claim.id}
-      className={`rounded-lg border border-l-4 border-slate-200 bg-white p-4 shadow-sm print:break-inside-avoid print:shadow-none ${STATUS_META[assessment.status].border}`}
+      className={cx("rounded-lg border border-l-4 border-slate-200 bg-white p-4 shadow-sm print:break-inside-avoid print:shadow-none", !printView && "dark:border-y-slate-800 dark:border-r-slate-800 dark:bg-slate-900", STATUS_META[assessment.status].border)}
     >
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+          <div
+            className={cx(
+              "flex flex-wrap items-center gap-2 text-xs text-slate-500",
+              !printView && "dark:text-slate-400",
+            )}
+          >
             {/* On screen the id is noise; it stays in data-record-id. Print
                 keeps it as text so a printed record stays traceable. */}
             {printView && (
@@ -69,16 +89,29 @@ export function ClaimCard({
             <span>·</span>
             <span className="capitalize">{claim.importance} importance</span>
           </div>
-          <h3 className="mt-1 text-lg font-semibold text-slate-900">{claim.statement}</h3>
+          <h3
+            className={cx(
+              "mt-1 text-lg font-semibold text-slate-900",
+              !printView && "dark:text-slate-100",
+            )}
+          >
+            {claim.statement}
+          </h3>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <StatusBadge status={assessment.status} withInfo={!printView} />
+          <StatusBadge status={assessment.status} withInfo={!printView} printView={printView} />
           {!printView && (
             <button
               type="button"
               onClick={(e) => onOpenTimeline(e.currentTarget)}
-              className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 transition hover:border-slate-500 print:hidden"
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-400 bg-slate-100 px-3.5 py-1.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:border-slate-600 hover:bg-slate-200 dark:border-slate-500 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700 print:hidden"
             >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" aria-hidden="true">
+                <path d="M7 2v10" />
+                <circle cx="7" cy="2" r="1.5" fill="currentColor" />
+                <circle cx="7" cy="7" r="1.5" fill="currentColor" />
+                <circle cx="7" cy="12" r="1.5" fill="currentColor" />
+              </svg>
               Evidence timeline
             </button>
           )}
@@ -87,32 +120,52 @@ export function ClaimCard({
 
       <div className="mt-3 grid gap-3">
         <div>
-          <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <span
+            className={cx(
+              "text-xs font-semibold uppercase tracking-wide text-slate-500",
+              !printView && "dark:text-slate-400",
+            )}
+          >
             Source: {claim.source_document.replace("_", " ")}
           </span>
-          <p className={`mt-1 border-l-2 border-slate-300 pl-3 text-sm italic text-slate-700 ${clamp}`}>
+          <p
+            className={cx(
+              `mt-1 border-l-2 border-slate-300 pl-3 text-sm italic text-slate-700 ${clamp}`,
+              !printView && "dark:border-slate-700 dark:text-slate-300",
+            )}
+          >
             “{claim.source_excerpt}”
           </p>
         </div>
 
         <div>
-          <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <span
+            className={cx(
+              "text-xs font-semibold uppercase tracking-wide text-slate-500",
+              !printView && "dark:text-slate-400",
+            )}
+          >
             Why this status
           </span>
-          {/* Collapsed shows the first two sentences whole; the rest stays in the
+          {/* The card shows the first two sentences whole; the rest stays in the
               DOM and prints, so nothing is lost on paper. */}
-          <p className="mt-1 text-sm text-slate-900">
+          <p className={cx("mt-1 text-sm text-slate-900", !printView && "dark:text-slate-100")}>
             <span className="font-semibold">{lead}</span>
             {rest && (
-              <span className={expanded ? "text-slate-800" : "hidden text-slate-800 print:inline"}>
+              <span
+                className={cx(
+                  printView ? "text-slate-800" : "hidden text-slate-800 print:inline",
+                  !printView && "dark:text-slate-300",
+                )}
+              >
                 {` ${rest}`}
               </span>
             )}
           </p>
         </div>
 
-        {!expanded && (
-          <p className="text-xs text-slate-500 print:hidden">
+        {!printView && (
+          <p className="text-xs text-slate-500 dark:text-slate-400 print:hidden">
             {plural(exchanges.length, "question", "questions")} ·{" "}
             {plural(evidence.length, "evidence item", "evidence items")} ·{" "}
             {plural(
@@ -125,17 +178,22 @@ export function ClaimCard({
 
         <div
           id={bodyId}
-          className={expanded ? "grid gap-4" : "hidden print:grid print:gap-4"}
+          className={printView ? "grid gap-4" : "hidden print:grid print:gap-4"}
         >
-          <Section title="Questions and answers">
+          <Section title="Questions and answers" printView={printView}>
             {exchanges.length === 0 ? (
-              <p className="text-sm text-slate-500">No question was asked about this claim.</p>
+              <p className={cx("text-sm text-slate-500", !printView && "dark:text-slate-400")}>
+                No question was asked about this claim.
+              </p>
             ) : (
               <ol className="space-y-4">
                 {exchanges.map(({ question, answer }) => (
                   <li key={question.id}>
-                    <QuestionBlock kind={question.kind} text={question.text} />
-                    <AnswerBlock text={answer ? excerpt(answer.transcript) : undefined} />
+                    <QuestionBlock kind={question.kind} text={question.text} printView={printView} />
+                    <AnswerBlock
+                      text={answer ? excerpt(answer.transcript) : undefined}
+                      printView={printView}
+                    />
                   </li>
                 ))}
               </ol>
@@ -143,18 +201,23 @@ export function ClaimCard({
           </Section>
 
           {external.length > 0 && (
-            <Section title="External evidence">
-              <EvidenceList items={external} />
+            <Section title="External evidence" printView={printView}>
+              <EvidenceList items={external} printView={printView} />
             </Section>
           )}
 
-          <Section title="Interview and document evidence">
-            <EvidenceList items={other} />
+          <Section title="Interview and document evidence" printView={printView}>
+            <EvidenceList items={other} printView={printView} />
           </Section>
 
           {assessment.unresolved_questions.length > 0 && (
-            <Section title="Unresolved questions for human review">
-              <ul className="list-disc space-y-1 pl-5 text-sm text-slate-800">
+            <Section title="Unresolved questions for human review" printView={printView}>
+              <ul
+                className={cx(
+                  "list-disc space-y-1 pl-5 text-sm text-slate-800",
+                  !printView && "dark:text-slate-300",
+                )}
+              >
                 {assessment.unresolved_questions.map((q) => (
                   <li key={q}>{q}</li>
                 ))}
@@ -165,15 +228,13 @@ export function ClaimCard({
       </div>
 
       {!printView && (
-        <footer className="mt-3 border-t border-slate-100 pt-2 print:hidden">
+        <footer className="mt-3 border-t border-slate-100 pt-2 dark:border-slate-800 print:hidden">
           <button
             type="button"
-            onClick={onToggle}
-            aria-expanded={expanded}
-            aria-controls={bodyId}
-            className="text-sm text-slate-500 transition hover:text-slate-800"
+            onClick={(e) => onOpenDetails(e.currentTarget)}
+            className="text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
           >
-            {expanded ? "Hide details ▴" : "Details ▾"}
+            Details
           </button>
         </footer>
       )}

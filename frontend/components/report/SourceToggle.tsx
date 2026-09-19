@@ -8,13 +8,15 @@ export function SourceToggle({ id, active }: { id: string; active: "demo" | "liv
       href={`/recruiter/${id}?source=${key}`}
       aria-current={active === key ? "true" : undefined}
       className={`rounded-full px-3 py-1 transition ${
-        active === key ? "bg-slate-900 text-white" : "text-slate-600 hover:text-slate-900"
+        active === key
+          ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+          : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
       }`}
     >{label}</Link>
   );
 
   return (
-    <div className="inline-flex shrink-0 items-center rounded-full border border-slate-300 bg-white p-0.5 text-sm print:hidden">
+    <div className="inline-flex shrink-0 items-center rounded-full border border-slate-300 bg-white p-0.5 text-sm dark:border-slate-700 dark:bg-slate-900 print:hidden">
       {segment("demo", "Demo")}
       {segment("live", "Live")}
     </div>

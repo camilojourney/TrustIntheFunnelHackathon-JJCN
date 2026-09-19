@@ -1,5 +1,7 @@
 // Skeleton while the report loads. Same shape as the real page, so the layout
 // does not jump.
+// The bars carry no dark: class on purpose: this file also streams into the
+// print route, which must stay light. globals.css darkens them on screen.
 function Bar({ className = "" }: { className?: string }) {
   return <div className={`animate-pulse rounded bg-slate-200 ${className}`} />;
 }

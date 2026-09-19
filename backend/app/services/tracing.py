@@ -16,4 +16,9 @@ def record_event(db, stage, candidate_id=None, session_id=None, status="ok", **d
     )
     db.add(event)
     db.commit()
+    try:
+        from app.integrations.prism import emit_event
+        emit_event(event.session_id, event.stage, event.status, dict(event.details or {}))
+    except Exception:
+        pass
     return event
