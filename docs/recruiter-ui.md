@@ -1,5 +1,7 @@
 # Sage — recruiter UI (Person 3) — handoff
 
+What is left: see [recruiter-ui-whats-left.md](recruiter-ui-whats-left.md).
+
 The product name is **Sage**. It shows in the tab title, the browser tab icon,
 and a wordmark in the header of the queue, the report and the print view
 (`frontend/components/Logo.tsx`, drawing repeated in `frontend/app/icon.svg`).
