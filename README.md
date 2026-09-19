@@ -26,6 +26,8 @@ npm run dev
 
 Open http://localhost:3000/candidate. Start the connected demo to save answers to the local backend, or explicitly select offline rehearsal to keep the session in the browser. The completed session links to its recruiter report and execution trace. The recruiter queue is at /recruiter; the synthetic evidence page is at /demo-artifact.
 
+The Sage candidate interface supports voice, typed answers, transcript review, and optional local camera preview. See [candidate integration](docs/candidate-integration.md) for the merge decisions and browser coverage.
+
 ## Configuration
 
 Backend settings are listed in .env.example. The default SQLite database is claimproof.db in the backend process's working directory; DATABASE_URL can override it. DEMO_MODE=true uses deterministic model/transcription fixtures; audio fixture text is labeled as simulated in the UI.

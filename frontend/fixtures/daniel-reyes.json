@@ -1,0 +1,205 @@
+{
+  "candidate_id": "daniel-reyes",
+  "role_title": "Frontend Engineer",
+  "claims": [
+    {
+      "id": "claim-a",
+      "candidate_id": "daniel-reyes",
+      "source_document": "resume",
+      "source_excerpt": "Cut Largest Contentful Paint on the marketing site from 4.1 s to 1.8 s.",
+      "category": "impact",
+      "statement": "Reduced Largest Contentful Paint on the marketing site from 4.1 s to 1.8 s.",
+      "importance": "high",
+      "entities": ["Largest Contentful Paint", "Core Web Vitals", "Next.js", "image optimization"]
+    },
+    {
+      "id": "claim-b",
+      "candidate_id": "daniel-reyes",
+      "source_document": "resume",
+      "source_excerpt": "Built an accessible React component library now used by 5 product teams.",
+      "category": "project",
+      "statement": "Built an accessible React component library adopted by 5 product teams.",
+      "importance": "medium",
+      "entities": ["React", "design system", "accessibility", "WCAG"]
+    },
+    {
+      "id": "claim-c",
+      "candidate_id": "daniel-reyes",
+      "source_document": "resume",
+      "source_excerpt": "Led the checkout redesign that lifted completed orders.",
+      "category": "employment",
+      "statement": "Led a checkout redesign that increased completed orders.",
+      "importance": "high",
+      "entities": ["checkout", "conversion", "redesign"]
+    }
+  ],
+  "questions": [
+    {
+      "id": "q-a1",
+      "claim_id": "claim-a",
+      "text": "What was slow about the 4.1 s page, and how did you measure the before and after numbers?",
+      "kind": "opening",
+      "intent": "Establish the cause of the slow paint and the measurement method behind both figures."
+    },
+    {
+      "id": "q-a2",
+      "claim_id": "claim-a",
+      "text": "You mentioned the hero image and the font. Which change moved the number most, and how did you keep the 1.8 s from drifting back?",
+      "kind": "follow_up",
+      "intent": "Probe attribution between the changes and whether the gain was held over time."
+    },
+    {
+      "id": "q-b1",
+      "claim_id": "claim-b",
+      "text": "What makes the library accessible, and how do you check that before a component ships?",
+      "kind": "opening",
+      "intent": "Check what accessibility means here and whether it is tested rather than intended."
+    },
+    {
+      "id": "q-b2",
+      "claim_id": "claim-b",
+      "text": "Which 5 teams use it, and how much of each team's interface comes from the library today?",
+      "kind": "follow_up",
+      "intent": "Test the adoption count, which the claim rests on."
+    },
+    {
+      "id": "q-c1",
+      "claim_id": "claim-c",
+      "text": "Walk through the checkout redesign. What was your part in it, and what moved?",
+      "kind": "opening",
+      "intent": "Establish the candidate's role and the measured outcome."
+    },
+    {
+      "id": "q-c2",
+      "claim_id": "claim-c",
+      "text": "You joined after the designs were signed off. Who set the direction, and what did leading it mean in practice?",
+      "kind": "follow_up",
+      "intent": "Separate the candidate's contribution from the word led."
+    }
+  ],
+  "answers": [
+    {
+      "id": "ans-a1",
+      "question_id": "q-a1",
+      "transcript": "The largest element was a 2.4 MB hero JPEG served at full size to phones, and it sat behind a client-side data call, so it did not even start downloading until the bundle had run. The web font was blocking text paint on top of that. I moved the page to a server component so the hero markup ships in the first response, converted the image to AVIF with responsive sources, and preloaded it. For numbers, I used the field data in our RUM tool, p75 mobile over 28 days, which is the same window Google uses. It was 4.1 s before the change and 1.8 s a month after.",
+      "created_at": "2026-09-19T10:31:05Z"
+    },
+    {
+      "id": "ans-a2",
+      "question_id": "q-a2",
+      "transcript": "The image work did most of it. I shipped the three changes in separate releases on purpose, and the AVIF and preload release alone took p75 from 4.1 to about 2.3. The server component took it to roughly 1.9, and the font swap was the last tenth. To hold it, I added a Lighthouse CI budget on the pull request that fails the build if lab LCP goes over 2.2 s, and the RUM p75 goes on the team dashboard. It has been between 1.7 and 1.9 since.",
+      "created_at": "2026-09-19T10:34:22Z"
+    },
+    {
+      "id": "ans-b1",
+      "question_id": "q-b1",
+      "transcript": "Everything is keyboard reachable, we use the ARIA pattern from the APG for the menu and the dialog, and the focus ring is never removed. Colours came from the design team and I believe they meet contrast. We run axe in the Storybook test run, so an obvious violation fails CI. I have not done a screen reader pass on every component. I test with VoiceOver on the ones I write, but there is no formal audit and nobody has tested it with an assistive technology user.",
+      "created_at": "2026-09-19T10:37:10Z"
+    },
+    {
+      "id": "ans-b2",
+      "question_id": "q-b2",
+      "transcript": "Growth, billing and the onboarding team use it properly, and most of their screens are built from it. Support tools imported the button and the form field and not much else. The fifth one is mobile web, and I am really counting them because they installed the package. I do not know how much of their interface actually uses it.",
+      "created_at": "2026-09-19T10:39:44Z"
+    },
+    {
+      "id": "ans-c1",
+      "question_id": "q-c1",
+      "transcript": "It was a three step checkout that we moved to a single page with an address autocomplete and saved cards. Completed orders went up. I remember a number around eight percent but I would not swear to it. I joined the project after the designs were signed off, so I was building against a spec that already existed.",
+      "created_at": "2026-09-19T10:42:18Z"
+    },
+    {
+      "id": "ans-c2",
+      "question_id": "q-c2",
+      "transcript": "The product manager and a design lead set the direction before I was on it. I built the address step and the card form, and I reviewed the other front-end work because I was the senior person on the front-end side. There were two other engineers on it. I do not know who ran the experiment or how the eight percent was worked out. Looking at it now, led is probably the wrong word on my resume.",
+      "created_at": "2026-09-19T10:45:02Z"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "ev-a1",
+      "claim_id": "claim-a",
+      "type": "interview_excerpt",
+      "source_label": "Answer to opening question",
+      "excerpt": "I used the field data in our RUM tool, p75 mobile over 28 days. It was 4.1 s before the change and 1.8 s a month after.",
+      "supports": "The candidate names the data source, the percentile, the device class, and the window for both figures.",
+      "limitations": "This is the candidate's own account. The dashboard was not reviewed."
+    },
+    {
+      "id": "ev-a2",
+      "claim_id": "claim-a",
+      "type": "interview_excerpt",
+      "source_label": "Answer to follow-up question",
+      "excerpt": "I shipped the three changes in separate releases on purpose. The AVIF and preload release alone took p75 from 4.1 to about 2.3. I added a Lighthouse CI budget that fails the build if lab LCP goes over 2.2 s.",
+      "supports": "The candidate attributes the gain to a specific release and describes a guard that keeps the number from drifting back.",
+      "limitations": "The release history and the CI budget were described, not shown."
+    },
+    {
+      "id": "ev-b1",
+      "claim_id": "claim-b",
+      "type": "interview_excerpt",
+      "source_label": "Answer to opening question",
+      "excerpt": "We run axe in the Storybook test run, so an obvious violation fails CI. I have not done a screen reader pass on every component, and nobody has tested it with an assistive technology user.",
+      "supports": "An automated accessibility gate exists, and the candidate stated its limits without being pressed.",
+      "limitations": "Automated checks catch a minority of accessibility defects. No audit or user testing supports the word accessible."
+    },
+    {
+      "id": "ev-b2",
+      "claim_id": "claim-b",
+      "type": "interview_excerpt",
+      "source_label": "Answer to follow-up question",
+      "excerpt": "Growth, billing and onboarding use it properly. Support tools imported the button and the form field and not much else. The fifth is mobile web, and I am counting them because they installed the package.",
+      "supports": "The candidate gives a team by team breakdown rather than repeating the count.",
+      "limitations": "By the candidate's own description, 3 teams use the library and 2 have only installed or partly imported it."
+    },
+    {
+      "id": "ev-c1",
+      "claim_id": "claim-c",
+      "type": "interview_excerpt",
+      "source_label": "Answer to opening question",
+      "excerpt": "Completed orders went up. I remember a number around eight percent but I would not swear to it. I joined the project after the designs were signed off.",
+      "supports": "The candidate worked on the redesign and gives an approximate outcome.",
+      "limitations": "The figure is a recollection with no baseline, window, or experiment design behind it."
+    },
+    {
+      "id": "ev-c2",
+      "claim_id": "claim-c",
+      "type": "interview_excerpt",
+      "source_label": "Answer to follow-up question",
+      "excerpt": "The product manager and a design lead set the direction before I was on it. I built the address step and the card form, and I reviewed the other front-end work. I do not know who ran the experiment.",
+      "supports": "The candidate describes a real and senior build contribution to two parts of the flow.",
+      "limitations": "The direction, the experiment, and the reported lift all sit outside what the candidate did or can describe."
+    }
+  ],
+  "assessments": [
+    {
+      "claim_id": "claim-a",
+      "status": "demonstrated",
+      "rationale": "The candidate explained what made the old page slow at the level of the specific element, the request order, and the font. Both figures came from named field data with a stated percentile, device class, and window. The follow-up split the gain across three separate releases and gave the intermediate number, which is harder to produce than a single before and after. A CI budget and a dashboard were described as the guard that holds it.",
+      "evidence_ids": ["ev-a1", "ev-a2"],
+      "unresolved_questions": []
+    },
+    {
+      "claim_id": "claim-b",
+      "status": "partially_demonstrated",
+      "rationale": "The candidate described real accessibility work: keyboard reach, published ARIA patterns, a visible focus ring, and an automated axe gate in CI. The candidate also said that there is no formal audit, no screen reader pass on every component, and no testing with an assistive technology user, so accessible is broader than the evidence. On the count of 5 teams, the candidate's own breakdown gives 3 real adopters, 1 team using two components, and 1 counted for installing the package. The library exists and is in use, but the claim as written overstates both halves.",
+      "evidence_ids": ["ev-b1", "ev-b2"],
+      "unresolved_questions": [
+        "Has any component been checked against WCAG by an auditor or an assistive technology user?",
+        "Do the design colours meet contrast, and who verified that?",
+        "What share of each of the 5 teams' interface comes from the library today?"
+      ]
+    },
+    {
+      "claim_id": "claim-c",
+      "status": "unresolved",
+      "rationale": "The interview did not gather enough relevant evidence for the claim as written. The candidate joined after the designs were signed off, named the product manager and design lead as the people who set the direction, and said that led is probably the wrong word. The eight percent figure is a recollection: the candidate does not know who ran the experiment or how the number was worked out. A separate and narrower claim about building the address and card steps would be reviewable, but it is not the claim on the resume.",
+      "evidence_ids": ["ev-c1", "ev-c2"],
+      "unresolved_questions": [
+        "What was the baseline order completion rate, and over what window was the lift measured?",
+        "Who ran the experiment, and was it a controlled test or a before and after comparison?",
+        "Which decisions on the redesign were the candidate's to make?"
+      ]
+    }
+  ]
+}

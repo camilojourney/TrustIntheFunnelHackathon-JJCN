@@ -1,0 +1,209 @@
+{
+  "candidate_id": "sofia-lindqvist",
+  "role_title": "Site Reliability Engineer",
+  "claims": [
+    {
+      "id": "claim-a",
+      "candidate_id": "sofia-lindqvist",
+      "source_document": "resume",
+      "source_excerpt": "Reduced paging alerts by 60% through alert tuning and on-call review.",
+      "category": "impact",
+      "statement": "Cut the number of paging alerts by 60%.",
+      "importance": "high",
+      "entities": ["on-call", "paging", "alerting", "Prometheus"]
+    },
+    {
+      "id": "claim-b",
+      "candidate_id": "sofia-lindqvist",
+      "source_document": "resume",
+      "source_excerpt": "Ran a multi-region failover drill across the production estate.",
+      "category": "project",
+      "statement": "Ran a multi-region failover drill in production.",
+      "importance": "medium",
+      "entities": ["multi-region", "failover", "Terraform", "Route 53", "Aurora"]
+    },
+    {
+      "id": "claim-c",
+      "candidate_id": "sofia-lindqvist",
+      "source_document": "resume",
+      "source_excerpt": "Maintained 99.99% uptime for the platform.",
+      "category": "impact",
+      "statement": "Maintained 99.99% uptime for the platform.",
+      "importance": "high",
+      "entities": ["uptime", "availability", "SLO"]
+    }
+  ],
+  "questions": [
+    {
+      "id": "q-a1",
+      "claim_id": "claim-a",
+      "text": "How many pages did the team get before and after, and what did you change to bring the number down?",
+      "kind": "opening",
+      "intent": "Establish the two counts, the window, and the changes behind the 60%."
+    },
+    {
+      "id": "q-a2",
+      "claim_id": "claim-a",
+      "text": "How do you know the removed alerts were noise? Did any incident go undetected after the tuning?",
+      "kind": "follow_up",
+      "intent": "Test whether fewer pages meant less noise or less coverage."
+    },
+    {
+      "id": "q-b1",
+      "claim_id": "claim-b",
+      "text": "Describe the drill. What did you fail over, and how did you know it worked?",
+      "kind": "opening",
+      "intent": "Establish the scope of the drill and the success criteria."
+    },
+    {
+      "id": "q-b2",
+      "claim_id": "claim-b",
+      "text": "How did you fail back to the primary region, and what was the plan if the drill went wrong?",
+      "kind": "follow_up",
+      "intent": "Probe the rollback path, which decides whether a production drill is safe to run."
+    },
+    {
+      "id": "q-c1",
+      "claim_id": "claim-c",
+      "text": "Over what period was the 99.99% measured, and what counted as downtime?",
+      "kind": "opening",
+      "intent": "Establish the measurement window and the definition behind the number."
+    },
+    {
+      "id": "q-c2",
+      "claim_id": "claim-c",
+      "text": "Which probe or dashboard produced that figure, and was it a target or a measured result?",
+      "kind": "follow_up",
+      "intent": "Find out whether the number was measured at all."
+    }
+  ],
+  "answers": [
+    {
+      "id": "ans-a1",
+      "question_id": "q-a1",
+      "transcript": "It was a lot of pages before, genuinely brutal, and after the tuning it was much calmer. Sixty percent is roughly what it felt like from the on-call handover notes. I deleted a set of alerts that nobody ever acted on, and I raised some thresholds. I do not have the before and after counts written down anywhere I can point you at.",
+      "created_at": "2026-09-19T13:04:11Z"
+    },
+    {
+      "id": "ans-a2",
+      "question_id": "q-a2",
+      "transcript": "Mostly because the on-call people said those ones were noise in the retro. We did not classify them or keep a list. I think there was one incident where the database filled up and we found out from a customer, but I am not sure whether that was an alert I had touched or one we never had.",
+      "created_at": "2026-09-19T13:06:35Z"
+    },
+    {
+      "id": "ans-b1",
+      "question_id": "q-b1",
+      "transcript": "We failed the payments and the API tier from eu-west-1 to eu-central-1. The stack is Terraform, traffic moves with a Route 53 weighted policy, and the database is an Aurora global cluster with a secondary in the other region. We ran it on a Saturday morning at low traffic. Success was the synthetic checks staying green and the error rate under one percent, and both held. Total time to move traffic was about eleven minutes, most of that DNS.",
+      "created_at": "2026-09-19T13:09:20Z"
+    },
+    {
+      "id": "ans-b2",
+      "question_id": "q-b2",
+      "transcript": "The principal engineer handled the fail back the next morning. I know the Aurora secondary was promoted, so going back was not just flipping the DNS weights again, but I could not tell you the steps. There was a runbook and an abort plan, and he wrote both. I ran the traffic shift and watched the dashboards.",
+      "created_at": "2026-09-19T13:11:50Z"
+    },
+    {
+      "id": "ans-c1",
+      "question_id": "q-c1",
+      "transcript": "That was the number we always used for the platform. I would say it covers the last couple of years. Downtime would be the API being unavailable, I suppose, although we never wrote a definition down that I saw.",
+      "created_at": "2026-09-19T13:14:02Z"
+    },
+    {
+      "id": "ans-c2",
+      "question_id": "q-c2",
+      "transcript": "It came from the availability slide in the quarterly review. I did not build that and I do not know which probe fed it. Thinking about it, 99.99% was the target in the SLO document, so it may be the target rather than what we measured.",
+      "created_at": "2026-09-19T13:16:27Z"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "ev-a1",
+      "claim_id": "claim-a",
+      "type": "interview_excerpt",
+      "source_label": "Answer to opening question",
+      "excerpt": "Sixty percent is roughly what it felt like from the on-call handover notes. I do not have the before and after counts written down anywhere I can point you at.",
+      "supports": "The candidate did delete unused alerts and raise thresholds, and says plainly where the 60% came from.",
+      "limitations": "No before or after count, no window, and no record behind the figure."
+    },
+    {
+      "id": "ev-a2",
+      "claim_id": "claim-a",
+      "type": "interview_excerpt",
+      "source_label": "Answer to follow-up question",
+      "excerpt": "We did not classify them or keep a list. I think there was one incident where the database filled up and we found out from a customer.",
+      "supports": "The candidate reports the outcome without smoothing over the missed incident.",
+      "limitations": "Whether the tuning removed noise or removed coverage is still open, including for the missed incident."
+    },
+    {
+      "id": "ev-b1",
+      "claim_id": "claim-b",
+      "type": "interview_excerpt",
+      "source_label": "Answer to opening question",
+      "excerpt": "We failed payments and the API tier from eu-west-1 to eu-central-1. Success was the synthetic checks staying green and the error rate under one percent, and both held. Total time to move traffic was about eleven minutes.",
+      "supports": "The candidate names the regions, the tooling, the success criteria, and the observed time to move traffic.",
+      "limitations": "This is the candidate's own account. No drill report was reviewed."
+    },
+    {
+      "id": "ev-b2",
+      "claim_id": "claim-b",
+      "type": "interview_excerpt",
+      "source_label": "Answer to follow-up question",
+      "excerpt": "The principal engineer handled the fail back the next morning. I could not tell you the steps. There was a runbook and an abort plan, and he wrote both. I ran the traffic shift and watched the dashboards.",
+      "supports": "The candidate is clear about which part of the drill was theirs.",
+      "limitations": "The candidate cannot describe the fail back or the abort plan, which is the half of the drill that carries the risk."
+    },
+    {
+      "id": "ev-c1",
+      "claim_id": "claim-c",
+      "type": "interview_excerpt",
+      "source_label": "Answer to opening question",
+      "excerpt": "That was the number we always used for the platform. Downtime would be the API being unavailable, I suppose, although we never wrote a definition down that I saw.",
+      "supports": "The candidate repeats the claim.",
+      "limitations": "No measurement window and no definition of downtime, so the number cannot be checked."
+    },
+    {
+      "id": "ev-c2",
+      "claim_id": "claim-c",
+      "type": "interview_excerpt",
+      "source_label": "Answer to follow-up question",
+      "excerpt": "It came from the availability slide in the quarterly review. Thinking about it, 99.99% was the target in the SLO document, so it may be the target rather than what we measured.",
+      "supports": "The candidate identified the source of the figure and corrected the claim without being pressed.",
+      "limitations": "On the candidate's own account the figure may be an objective rather than a measured result."
+    }
+  ],
+  "assessments": [
+    {
+      "claim_id": "claim-a",
+      "status": "unresolved",
+      "rationale": "The interview did not gather enough relevant evidence for the 60% figure. The candidate deleted unused alerts and raised thresholds, which is real work, but the number came from an impression of the on-call handover notes rather than a count. No before or after total, window, or record was available. The follow-up also surfaced one incident found by a customer that the candidate could not rule in or out, so it is not settled whether the tuning removed noise or removed coverage.",
+      "evidence_ids": ["ev-a1", "ev-a2"],
+      "unresolved_questions": [
+        "How many pages did the team get per week before and after, and over which weeks?",
+        "Which alerts were deleted, and was any of them the one that would have caught the full database?",
+        "Is there an alerting or paging history a reviewer can count?"
+      ]
+    },
+    {
+      "claim_id": "claim-b",
+      "status": "partially_demonstrated",
+      "rationale": "The candidate described the drill in specific terms: the two tiers, the two regions, Route 53 weighted traffic, an Aurora global cluster, the low-traffic window, and two success criteria that were met. The traffic shift was the candidate's own work and the account of it is detailed. The fail back is a blank: the principal engineer promoted the secondary and ran the return, and the candidate cannot describe the steps or the abort plan. A failover drill that cannot be reversed by the person running it is only half demonstrated.",
+      "evidence_ids": ["ev-b1", "ev-b2"],
+      "unresolved_questions": [
+        "What were the fail back steps after the Aurora secondary was promoted?",
+        "What was the abort plan if the synthetic checks had failed mid-drill?",
+        "Is there a drill report with the timings a reviewer can read?"
+      ]
+    },
+    {
+      "claim_id": "claim-c",
+      "status": "unresolved",
+      "rationale": "The interview did not gather enough relevant evidence. The candidate could not give a measurement window, a definition of downtime, or the probe behind the figure. The source turned out to be an availability slide the candidate did not build. The candidate then said that 99.99% was the target in the SLO document and may not be a measured result at all, which leaves nothing to review.",
+      "evidence_ids": ["ev-c1", "ev-c2"],
+      "unresolved_questions": [
+        "Over which months was availability measured, and what counted as downtime?",
+        "Which probe or dashboard produced the figure, and who owns it?",
+        "Was 99.99% ever measured, or is it the SLO target?"
+      ]
+    }
+  ]
+}

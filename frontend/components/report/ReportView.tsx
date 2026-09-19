@@ -2,9 +2,11 @@
 
 import { useMemo, useRef, useState } from "react";
 import type { CandidateReport } from "@shared/contracts";
+import { cx } from "@/lib/cx";
 import { buildClaimViews } from "@/lib/join";
 import { STATUSES, type Status } from "@/lib/status";
 import { ClaimCard } from "./ClaimCard";
+import { ClaimDetailsModal } from "./ClaimDetailsModal";
 import { ClaimTimeline } from "./ClaimTimeline";
 import { StatusFilter, type FilterValue } from "./StatusFilter";
 import { StatusSummary } from "./StatusSummary";
@@ -18,9 +20,10 @@ export function ReportView({
 }) {
   const views = useMemo(() => buildClaimViews(report), [report]);
   const [filter, setFilter] = useState<FilterValue>("all");
+  // Two layers, one at a time: the timeline drawer and the details modal.
   const [openId, setOpenId] = useState<string | null>(null);
-  const [expandedIds, setExpandedIds] = useState<string[]>([]);
-  // The button that opened the drawer, so focus can return to it on close.
+  const [detailsFor, setDetailsFor] = useState<string | null>(null);
+  // The control that opened the layer, so focus can return to it on close.
   const triggerRef = useRef<HTMLElement | null>(null);
 
   const counts = useMemo(() => {
@@ -31,21 +34,27 @@ export function ReportView({
 
   const visible = filter === "all" ? views : views.filter((v) => v.assessment.status === filter);
   const open = views.find((v) => v.claim.id === openId);
-  const allExpanded = views.length > 0 && expandedIds.length === views.length;
+  const details = views.find((v) => v.claim.id === detailsFor);
 
-  const toggle = (id: string) =>
-    setExpandedIds((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]));
+  const restoreFocus = () => {
+    triggerRef.current?.focus();
+    triggerRef.current = null;
+  };
 
   const closeTimeline = () => {
     setOpenId(null);
-    triggerRef.current?.focus();
-    triggerRef.current = null;
+    restoreFocus();
+  };
+
+  const closeDetails = () => {
+    setDetailsFor(null);
+    restoreFocus();
   };
 
   return (
     <div className="space-y-6">
       {report.answers.some(a => a.original_transcript && a.original_transcript !== a.transcript) && (
-        <details className="rounded-lg border border-slate-200 bg-white p-4">
+        <details className={cx("rounded-lg border border-slate-200 bg-white p-4 text-slate-900", !printView && "dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100")}>
           <summary className="cursor-pointer font-medium">Transcript corrections (originals retained)</summary>
           {report.answers.filter(a => a.original_transcript && a.original_transcript !== a.transcript).map(a => (
             <div key={a.id} className="mt-3 space-y-1 text-sm">
@@ -59,18 +68,16 @@ export function ReportView({
       {!printView && (
         <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
           <StatusFilter value={filter} onChange={setFilter} counts={counts} total={views.length} />
-          <button
-            type="button"
-            onClick={() => setExpandedIds(allExpanded ? [] : views.map((v) => v.claim.id))}
-            className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 transition hover:border-slate-500"
-          >
-            {allExpanded ? "Collapse all" : "Expand all"}
-          </button>
         </div>
       )}
       <div className="space-y-4">
         {visible.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">
+          <p
+            className={cx(
+              "rounded-lg border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500",
+              !printView && "dark:border-slate-700 dark:text-slate-400",
+            )}
+          >
             No claims have this status.
           </p>
         ) : (
@@ -78,11 +85,15 @@ export function ReportView({
             <ClaimCard
               key={v.claim.id}
               view={v}
-              expanded={printView || expandedIds.includes(v.claim.id)}
               printView={printView}
-              onToggle={() => toggle(v.claim.id)}
+              onOpenDetails={(trigger) => {
+                triggerRef.current = trigger;
+                setOpenId(null);
+                setDetailsFor(v.claim.id);
+              }}
               onOpenTimeline={(trigger) => {
                 triggerRef.current = trigger;
+                setDetailsFor(null);
                 setOpenId(v.claim.id);
               }}
             />
@@ -90,6 +101,7 @@ export function ReportView({
         )}
       </div>
       {!printView && open && <ClaimTimeline view={open} onClose={closeTimeline} />}
+      {!printView && details && <ClaimDetailsModal view={details} onClose={closeDetails} />}
     </div>
   );
 }
