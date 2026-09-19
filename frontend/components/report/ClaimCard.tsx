@@ -1,0 +1,182 @@
+"use client";
+
+import type { ClaimView } from "@/lib/join";
+import { STATUS_META } from "@/lib/status";
+import { splitLead } from "@/lib/summarize";
+import { AnswerBlock, QuestionBlock } from "./Exchange";
+import { EvidenceList } from "./EvidenceList";
+import { StatusBadge } from "./StatusBadge";
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section>
+      <h4 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+        {title}
+      </h4>
+      {children}
+    </section>
+  );
+}
+
+function excerpt(text: string, max = 260) {
+  return text.length > max ? `${text.slice(0, max).trimEnd()}…` : text;
+}
+
+function plural(n: number, one: string, many: string) {
+  return `${n} ${n === 1 ? one : many}`;
+}
+
+export function ClaimCard({
+  view,
+  expanded,
+  onToggle,
+  onOpenTimeline,
+  printView = false,
+}: {
+  view: ClaimView;
+  expanded: boolean;
+  onToggle: () => void;
+  onOpenTimeline: (trigger: HTMLElement) => void;
+  printView?: boolean;
+}) {
+  const { claim, exchanges, evidence, assessment } = view;
+  const external = evidence.filter((e) => e.type === "external_artifact");
+  const other = evidence.filter((e) => e.type !== "external_artifact");
+  const bodyId = `claim-body-${claim.id}`;
+
+  // Collapsed keeps the card short so two claims fit on one screen. The full
+  // body stays in the DOM and prints, so a printed report is never partial.
+  const clamp = expanded ? "" : "line-clamp-2 print:line-clamp-none";
+  const { lead, rest } = splitLead(assessment.rationale);
+
+  return (
+    <article
+      data-record-id={claim.id}
+      className={`rounded-lg border border-l-4 border-slate-200 bg-white p-4 shadow-sm print:break-inside-avoid print:shadow-none ${STATUS_META[assessment.status].border}`}
+    >
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+            {/* On screen the id is noise; it stays in data-record-id. Print
+                keeps it as text so a printed record stays traceable. */}
+            {printView && (
+              <>
+                <span className="font-mono">{claim.id}</span>
+                <span>·</span>
+              </>
+            )}
+            <span className="capitalize">{claim.category}</span>
+            <span>·</span>
+            <span className="capitalize">{claim.importance} importance</span>
+          </div>
+          <h3 className="mt-1 text-lg font-semibold text-slate-900">{claim.statement}</h3>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <StatusBadge status={assessment.status} withInfo={!printView} />
+          {!printView && (
+            <button
+              type="button"
+              onClick={(e) => onOpenTimeline(e.currentTarget)}
+              className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 transition hover:border-slate-500 print:hidden"
+            >
+              Evidence timeline
+            </button>
+          )}
+        </div>
+      </header>
+
+      <div className="mt-3 grid gap-3">
+        <div>
+          <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Source: {claim.source_document.replace("_", " ")}
+          </span>
+          <p className={`mt-1 border-l-2 border-slate-300 pl-3 text-sm italic text-slate-700 ${clamp}`}>
+            “{claim.source_excerpt}”
+          </p>
+        </div>
+
+        <div>
+          <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Why this status
+          </span>
+          {/* Collapsed shows the first two sentences whole; the rest stays in the
+              DOM and prints, so nothing is lost on paper. */}
+          <p className="mt-1 text-sm text-slate-900">
+            <span className="font-semibold">{lead}</span>
+            {rest && (
+              <span className={expanded ? "text-slate-800" : "hidden text-slate-800 print:inline"}>
+                {` ${rest}`}
+              </span>
+            )}
+          </p>
+        </div>
+
+        {!expanded && (
+          <p className="text-xs text-slate-500 print:hidden">
+            {plural(exchanges.length, "question", "questions")} ·{" "}
+            {plural(evidence.length, "evidence item", "evidence items")} ·{" "}
+            {plural(
+              assessment.unresolved_questions.length,
+              "unresolved question",
+              "unresolved questions",
+            )}
+          </p>
+        )}
+
+        <div
+          id={bodyId}
+          className={expanded ? "grid gap-4" : "hidden print:grid print:gap-4"}
+        >
+          <Section title="Questions and answers">
+            {exchanges.length === 0 ? (
+              <p className="text-sm text-slate-500">No question was asked about this claim.</p>
+            ) : (
+              <ol className="space-y-4">
+                {exchanges.map(({ question, answer }) => (
+                  <li key={question.id}>
+                    <QuestionBlock kind={question.kind} text={question.text} />
+                    <AnswerBlock text={answer ? excerpt(answer.transcript) : undefined} />
+                  </li>
+                ))}
+              </ol>
+            )}
+          </Section>
+
+          {external.length > 0 && (
+            <Section title="External evidence">
+              <EvidenceList items={external} />
+            </Section>
+          )}
+
+          <Section title="Interview and document evidence">
+            <EvidenceList items={other} />
+          </Section>
+
+          {assessment.unresolved_questions.length > 0 && (
+            <Section title="Unresolved questions for human review">
+              <ul className="list-disc space-y-1 pl-5 text-sm text-slate-800">
+                {assessment.unresolved_questions.map((q) => (
+                  <li key={q}>{q}</li>
+                ))}
+              </ul>
+            </Section>
+          )}
+        </div>
+      </div>
+
+      {!printView && (
+        <footer className="mt-3 border-t border-slate-100 pt-2 print:hidden">
+          <button
+            type="button"
+            onClick={onToggle}
+            aria-expanded={expanded}
+            aria-controls={bodyId}
+            className="text-sm text-slate-500 transition hover:text-slate-800"
+          >
+            {expanded ? "Hide details ▴" : "Details ▾"}
+          </button>
+        </footer>
+      )}
+    </article>
+  );
+}

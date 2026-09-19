@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f8fafc;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Print / save as PDF: white paper, no shadows, cards never split across pages.
+   Claim bodies are expanded by the print: variants in ClaimCard. */
+@media print {
+  :root {
+    --background: #ffffff;
+  }
+
+  body {
+    background: #ffffff;
+  }
+
+  main {
+    max-width: none;
+    padding: 0;
+  }
+
+  article,
+  section {
+    break-inside: avoid;
+  }
+}
