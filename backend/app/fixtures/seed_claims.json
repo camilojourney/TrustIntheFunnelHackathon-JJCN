@@ -1,0 +1,32 @@
+[
+  {
+    "id": "claim-rag-pipeline",
+    "candidate_id": "demo-candidate-1",
+    "source_document": "resume",
+    "source_excerpt": "Built a hybrid Neo4j and vector RAG pipeline that improved F1 by 2.75 percentage points across 200 evaluation queries.",
+    "category": "project",
+    "statement": "Built a hybrid Neo4j and vector RAG pipeline that improved F1 by 2.75 percentage points across 200 evaluation queries.",
+    "importance": "high",
+    "entities": ["Neo4j", "RAG", "vector retrieval", "F1", "evaluation queries"]
+  },
+  {
+    "id": "claim-aws-service",
+    "candidate_id": "demo-candidate-1",
+    "source_document": "resume",
+    "source_excerpt": "Deployed a fault-tolerant cloud service on AWS.",
+    "category": "employment",
+    "statement": "Deployed a fault-tolerant cloud service on AWS.",
+    "importance": "medium",
+    "entities": ["AWS", "fault tolerance", "cloud service"]
+  },
+  {
+    "id": "claim-inference-throughput",
+    "candidate_id": "demo-candidate-1",
+    "source_document": "resume",
+    "source_excerpt": "Improved inference throughput by 10x.",
+    "category": "impact",
+    "statement": "Improved inference throughput by 10x.",
+    "importance": "high",
+    "entities": ["inference throughput", "10x"]
+  }
+]
