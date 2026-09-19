@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "ClaimProof · Candidate evidence notebook",
-  description: "Add context and evidence to three claims from your application.",
+  description: "A personalized voice interview with Sage, grounded in your application.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

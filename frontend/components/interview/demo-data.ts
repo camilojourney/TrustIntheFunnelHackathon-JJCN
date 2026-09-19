@@ -1,9 +1,4 @@
-import type {
-  CandidateApplication,
-  ClaimAssessment,
-  InterviewAnswer,
-  InterviewQuestion,
-} from "./contracts";
+import type { CandidateApplication, InterviewQuestion } from "./contracts";
 
 export const DEMO_APPLICATION: CandidateApplication = {
   id: "application_demo_001",
@@ -109,32 +104,4 @@ export function buildAdaptiveFollowUp(answer: string): InterviewQuestion {
     why:
       "Your answer gave useful context; this follow-up invites one specific example of the change.",
   };
-}
-
-const STATUS_BY_CLAIM: Record<string, ClaimAssessment["status"]> = {
-  claim_onboarding: "demonstrated",
-  claim_design_system: "partially_demonstrated",
-  claim_incidents: "unresolved",
-};
-
-function excerpt(answer: InterviewAnswer | undefined, fallback: string): string {
-  const text = answer?.correctedTranscript || answer?.originalTranscript || fallback;
-  return text.length > 150 ? `${text.slice(0, 147).trim()}...` : text;
-}
-
-export function buildAssessments(answers: InterviewAnswer[]): ClaimAssessment[] {
-  return DEMO_APPLICATION.claims.map((claim) => {
-    const answer = answers.find((item) => item.claimId === claim.id);
-    const fallbacks: Record<string, string> = {
-      claim_onboarding: "Measurement method and individual contribution were discussed.",
-      claim_design_system: "Adoption context was discussed; usage evidence remained limited.",
-      claim_incidents: "The available interview record did not establish the comparison period.",
-    };
-
-    return {
-      claimId: claim.id,
-      status: STATUS_BY_CLAIM[claim.id] ?? "unresolved",
-      evidenceExcerpts: [excerpt(answer, fallbacks[claim.id])],
-    };
-  });
 }

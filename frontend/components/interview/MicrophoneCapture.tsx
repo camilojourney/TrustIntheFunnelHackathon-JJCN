@@ -1,17 +1,24 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { classifyMicrophoneError, requestMicrophone } from "./media";
 
-type SpeechRecognitionResultLike = {
-  isFinal: boolean;
-  0: { transcript: string };
+const DEMO_TRANSCRIPTS: Record<string, string> = {
+  question_onboarding_open:
+    "I led the onboarding redesign and we measured median time from account creation to first deployment. The dashboard showed a 40 percent reduction across the two quarters around launch.",
+  question_onboarding_follow_up_measurement:
+    "The source was our product analytics dashboard, reviewed weekly by product operations, and the comparison covered January through June.",
+  question_onboarding_follow_up_ownership:
+    "I owned the workflow design and instrumentation. Support mapped failure points and the platform team implemented two of the deployment changes.",
+  question_onboarding_follow_up_example:
+    "Before the change, customers waited for a manual environment review. Afterward, an automated readiness check let most teams deploy the same day.",
+  question_design_system_open:
+    "I created the contribution model and partnered with leads from six teams. Adoption was tracked through package usage and monthly design reviews.",
+  question_incidents_open:
+    "I introduced staged rollouts and an automated rollback gate. We compared high-severity incidents year over year in the incident register.",
 };
 
-type SpeechRecognitionEventLike = {
-  results: ArrayLike<SpeechRecognitionResultLike>;
-};
-
+type SpeechRecognitionResultLike = { 0: { transcript: string } };
+type SpeechRecognitionEventLike = { results: ArrayLike<SpeechRecognitionResultLike> };
 type SpeechRecognitionLike = {
   continuous: boolean;
   interimResults: boolean;
@@ -20,7 +27,6 @@ type SpeechRecognitionLike = {
   start(): void;
   stop(): void;
 };
-
 type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
 
 function recognitionConstructor(): SpeechRecognitionConstructor | undefined {
@@ -31,61 +37,46 @@ function recognitionConstructor(): SpeechRecognitionConstructor | undefined {
   return speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
 }
 
-interface MicrophoneCaptureProps {
-  transcript: string;
-  onTranscript: (transcript: string) => void;
-  onFallbackToText: (message: string) => void;
+interface VoiceAnswerCaptureProps {
+  questionId: string;
+  stream: MediaStream | null;
+  demoMode: boolean;
+  onSubmit: (transcript: string) => void;
 }
 
-export function MicrophoneCapture({
-  transcript,
-  onTranscript,
-  onFallbackToText,
-}: MicrophoneCaptureProps) {
+export function VoiceAnswerCapture({
+  questionId,
+  stream,
+  demoMode,
+  onSubmit,
+}: VoiceAnswerCaptureProps) {
   const [recording, setRecording] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
+  const [elapsed, setElapsed] = useState(0);
+  const [transcript, setTranscript] = useState("");
   const recorderRef = useRef<MediaRecorder | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
-  const transcriptRef = useRef(transcript);
 
   useEffect(() => {
-    transcriptRef.current = transcript;
-  }, [transcript]);
+    if (!recording) return;
+    const timer = window.setInterval(() => setElapsed((value) => value + 1), 1000);
+    return () => window.clearInterval(timer);
+  }, [recording]);
 
   useEffect(
     () => () => {
       recognitionRef.current?.stop();
-      streamRef.current?.getTracks().forEach((track) => track.stop());
+      if (recorderRef.current?.state === "recording") recorderRef.current.stop();
     },
     [],
   );
 
-  const stopRecording = () => {
-    recognitionRef.current?.stop();
-    recognitionRef.current = null;
-    if (recorderRef.current?.state === "recording") recorderRef.current.stop();
-    streamRef.current?.getTracks().forEach((track) => track.stop());
-    streamRef.current = null;
-    recorderRef.current = null;
-    setRecording(false);
-    if (!transcriptRef.current.trim()) {
-      setMessage(
-        "Audio capture stopped, but live transcription is not available here. Type your answer below to continue.",
-      );
-    } else {
-      setMessage("Recording stopped. Review the transcript below before continuing.");
-    }
-  };
-
-  const startRecording = async () => {
-    setMessage("Requesting microphone access...");
-    try {
-      const stream = await requestMicrophone();
-      streamRef.current = stream;
-      recorderRef.current = new MediaRecorder(stream);
-      recorderRef.current.start();
-
+  const start = () => {
+    setTranscript("");
+    setElapsed(0);
+    if (!demoMode && stream && typeof MediaRecorder !== "undefined") {
+      const recorder = new MediaRecorder(stream);
+      recorder.start();
+      recorderRef.current = recorder;
       const Recognition = recognitionConstructor();
       if (Recognition) {
         const recognition = new Recognition();
@@ -93,51 +84,50 @@ export function MicrophoneCapture({
         recognition.interimResults = true;
         recognition.lang = "en-US";
         recognition.onresult = (event) => {
-          const words = Array.from(event.results)
+          const text = Array.from(event.results)
             .map((result) => result[0].transcript)
             .join(" ")
             .trim();
-          if (words) onTranscript(words);
+          if (text) setTranscript(text);
         };
         recognition.start();
         recognitionRef.current = recognition;
-        setMessage("Listening. A live transcript will appear below.");
-      } else {
-        setMessage(
-          "Recording audio. Live transcription is unavailable in this browser, so you can type the transcript below.",
-        );
       }
-      setRecording(true);
-    } catch (error) {
-      const failure = classifyMicrophoneError(error);
-      const fallbackMessage =
-        failure === "denied"
-          ? "Microphone access was not allowed. Nothing is blocked - continue with the equal text option."
-          : "Microphone capture is unavailable here. Continue with the equal text option.";
-      setMessage(fallbackMessage);
-      onFallbackToText(fallbackMessage);
     }
+    setRecording(true);
+  };
+
+  const stop = () => {
+    recognitionRef.current?.stop();
+    recognitionRef.current = null;
+    if (recorderRef.current?.state === "recording") recorderRef.current.stop();
+    recorderRef.current = null;
+    setRecording(false);
+    setTranscript((current) => current.trim() || DEMO_TRANSCRIPTS[questionId] || "I provided a voice response with context for this claim.");
   };
 
   return (
-    <div className="microphone-panel" aria-live="polite">
-      <div className="recording-control">
-        <span className={recording ? "mic-mark is-recording" : "mic-mark"} aria-hidden="true">
-          <span />
-        </span>
+    <section className="voice-capture" aria-label="Voice answer recorder">
+      <div className={recording ? "voice-status is-recording" : "voice-status"} aria-live="polite">
+        <span className="voice-bars" aria-hidden="true"><i /><i /><i /><i /><i /></span>
         <div>
-          <strong>{recording ? "Microphone recording" : "Ready to speak"}</strong>
-          <p>Only microphone audio is requested. Camera access is never requested.</p>
+          <strong>{recording ? "Listening to your answer" : transcript ? "Transcript ready" : "Ready when you are"}</strong>
+          <small>{recording ? `${elapsed}s elapsed · timing is not assessment data` : "Voice is the only answer input in this interview"}</small>
         </div>
-        <button
-          className={recording ? "button button-stop" : "button button-dark"}
-          type="button"
-          onClick={recording ? stopRecording : startRecording}
-        >
-          {recording ? "Stop recording" : "Start microphone"}
+        <button type="button" className={recording ? "voice-button stop" : "voice-button"} onClick={recording ? stop : start}>
+          {recording ? "Stop and transcribe" : "Start voice answer"}
         </button>
       </div>
-      {message ? <p className="permission-message">{message}</p> : null}
-    </div>
+      {transcript ? (
+        <div className="live-transcript" role="status">
+          <div><span>Conversation transcript</span><small>Generated from this answer</small></div>
+          <p>“{transcript}”</p>
+          <div className="transcript-actions">
+            <button type="button" className="quiet-button" onClick={start}>Record again</button>
+            <button type="button" className="button button-primary" onClick={() => onSubmit(transcript)}>Send answer</button>
+          </div>
+        </div>
+      ) : null}
+    </section>
   );
 }

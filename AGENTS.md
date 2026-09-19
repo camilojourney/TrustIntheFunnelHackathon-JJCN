@@ -11,7 +11,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 ## Project map
 
 - Candidate experience product boundaries are documented in `research/gpt-deepresearch/2026-09-19-candidate-experience-screen-consent.md`.
-- Candidate UI lives in `frontend/app/candidate/` and `frontend/components/interview/`; `candidate-api.ts` is the replaceable local demo/API boundary.
+- Candidate UI lives in `frontend/app/candidate/` and `frontend/components/interview/`; `interview-machine.ts` owns deterministic session behavior and `media.ts` isolates browser device access.
 - Validate with the scripts in `package.json`, including `npm run test:e2e` for the full candidate journey.
 
 ## Maintaining this file
