@@ -27,7 +27,7 @@ The page calls `GET {API_BASE}/api/candidates/{id}/report`. On any error, a time
 - `/recruiter` — queue with one demo candidate and status counts.
 - `/recruiter/demo` — the report: summary counts, status filters, one card per claim.
 - Each card: source excerpt, questions, answer excerpts, rationale, external evidence, interview evidence, limitations, unresolved questions.
-- "Evidence timeline" button in each card header opens the drawer: claim → question → answer → evidence → assessment, with ids. Esc closes it. Focus moves to Close on open and returns to the header button on close. The page behind it does not scroll.
+- "Evidence timeline" button in each card header opens the drawer. The drawer has 3 tabs — **Questions** (the claim, then each question and answer, with one line for when the answers were recorded), **Evidence**, **Assessment** (the assessment pill always carries the status color). Left and Right arrows move between the tabs. Record ids are not shown as text: they are in `data-record-id` and the hover `title`, and show as text in the print view only. Esc closes it. Focus moves to Close on open and returns to the header button on close. The page behind it does not scroll.
 - "Decision support, not a hiring decision" banner on both pages.
 - The collapsed card shows a 2-sentence summary taken from `rationale` ("Why this status", bold, never cut with an ellipsis); the full text shows in Details, the timeline, and print (`frontend/lib/summarize.ts`).
 - A question and its answer use one shared pair of blocks (`frontend/components/report/Exchange.tsx`): a dark "Q · Opening" / "Q · Follow-up" chip, then the answer in a tinted "Candidate answer" box. The card and the drawer match.

@@ -51,13 +51,20 @@ export function ClaimCard({
 
   return (
     <article
+      data-record-id={claim.id}
       className={`rounded-lg border border-l-4 border-slate-200 bg-white p-4 shadow-sm print:break-inside-avoid print:shadow-none ${STATUS_META[assessment.status].border}`}
     >
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-            <span className="font-mono">{claim.id}</span>
-            <span>·</span>
+            {/* On screen the id is noise; it stays in data-record-id. Print
+                keeps it as text so a printed record stays traceable. */}
+            {printView && (
+              <>
+                <span className="font-mono">{claim.id}</span>
+                <span>·</span>
+              </>
+            )}
             <span className="capitalize">{claim.category}</span>
             <span>·</span>
             <span className="capitalize">{claim.importance} importance</span>

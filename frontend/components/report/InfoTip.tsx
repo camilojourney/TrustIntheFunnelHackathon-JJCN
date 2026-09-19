@@ -5,7 +5,19 @@ import { useEffect, useId, useRef, useState } from "react";
 // One definition behind a small "i". Hover, keyboard focus, or click opens it.
 // Click outside or Esc closes it. It never prints; the print-only definition
 // list under the summary tiles carries the same text on paper.
-export function InfoTip({ label, text }: { label: string; text: string }) {
+export function InfoTip({
+  label,
+  text,
+  ariaLabel,
+  align = "center",
+}: {
+  label: string;
+  text: string;
+  // `ariaLabel` overrides the "What does X mean?" wording where the tip is not
+  // a definition. `align="left"` keeps the tip inside a narrow container.
+  ariaLabel?: string;
+  align?: "center" | "left";
+}) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLSpanElement | null>(null);
   const focusedRef = useRef(false);
@@ -38,7 +50,7 @@ export function InfoTip({ label, text }: { label: string; text: string }) {
     >
       <button
         type="button"
-        aria-label={`What does ${label} mean?`}
+        aria-label={ariaLabel ?? `What does ${label} mean?`}
         aria-expanded={open}
         aria-describedby={open ? id : undefined}
         onClick={() => setOpen(true)}
@@ -58,7 +70,9 @@ export function InfoTip({ label, text }: { label: string; text: string }) {
         <span
           id={id}
           role="tooltip"
-          className="absolute left-1/2 top-6 z-30 w-60 -translate-x-1/2 rounded-md border border-slate-200 bg-white p-3 text-left text-xs font-normal normal-case leading-snug tracking-normal text-slate-700 shadow-lg"
+          className={`absolute top-6 z-30 w-60 rounded-md border border-slate-200 bg-white p-3 text-left text-xs font-normal normal-case leading-snug tracking-normal text-slate-700 shadow-lg ${
+            align === "left" ? "left-0" : "left-1/2 -translate-x-1/2"
+          }`}
         >
           {text}
         </span>
