@@ -7,3 +7,5 @@ pytest
 openai
 google-generativeai
 python-multipart
+sqlalchemy
+alembic

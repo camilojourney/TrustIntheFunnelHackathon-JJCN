@@ -1,17 +1,17 @@
 import uuid
-from typing import Any, Literal
+from typing import Literal
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
 from app import schemas
+from app.db import get_db
+from app.models import EvidenceModel
 
 router = APIRouter()
 
 _ARTIFACT_DISCLAIMER = "artifact existence does not prove candidate authorship"
-
-# In-memory evidence store, keyed by claim_id.
-_evidence_by_claim: dict[str, list[dict[str, Any]]] = {}
 
 
 class EvidenceCreateRequest(BaseModel):
@@ -23,8 +23,23 @@ class EvidenceCreateRequest(BaseModel):
     limitations: str
 
 
+def _evidence_to_schema(row: EvidenceModel) -> schemas.EvidenceItem:
+    return schemas.EvidenceItem(
+        id=row.id,
+        claim_id=row.claim_id,
+        type=row.type,
+        source_label=row.source_label,
+        excerpt=row.excerpt,
+        source_url=row.source_url,
+        supports=row.supports,
+        limitations=row.limitations,
+    )
+
+
 @router.post("/api/claims/{claim_id}/evidence", response_model=schemas.EvidenceItem)
-def add_evidence(claim_id: str, payload: EvidenceCreateRequest) -> schemas.EvidenceItem:
+def add_evidence(
+    claim_id: str, payload: EvidenceCreateRequest, db: Session = Depends(get_db)
+) -> schemas.EvidenceItem:
     limitations = payload.limitations.strip()
     if payload.type == "external_artifact" and _ARTIFACT_DISCLAIMER not in limitations.lower():
         limitations = (
@@ -33,7 +48,7 @@ def add_evidence(claim_id: str, payload: EvidenceCreateRequest) -> schemas.Evide
             else _ARTIFACT_DISCLAIMER.capitalize()
         )
 
-    evidence = schemas.EvidenceItem(
+    row = EvidenceModel(
         id=f"evidence-{uuid.uuid4().hex[:8]}",
         claim_id=claim_id,
         type=payload.type,
@@ -43,10 +58,11 @@ def add_evidence(claim_id: str, payload: EvidenceCreateRequest) -> schemas.Evide
         supports=payload.supports,
         limitations=limitations,
     )
-    _evidence_by_claim.setdefault(claim_id, []).append(evidence.model_dump())
-    return evidence
+    db.add(row)
+    db.commit()
+    return _evidence_to_schema(row)
 
 
-
-def get_evidence_for_claim(claim_id: str) -> list[schemas.EvidenceItem]:
-    return [schemas.EvidenceItem(**item) for item in _evidence_by_claim.get(claim_id, [])]
+def get_evidence_for_claim(claim_id: str, db: Session) -> list[schemas.EvidenceItem]:
+    rows = db.query(EvidenceModel).filter(EvidenceModel.claim_id == claim_id).all()
+    return [_evidence_to_schema(row) for row in rows]

@@ -1,7 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.db import Base, engine
 from app.routes import applications, evidence, interviews, reports
+
+# Safety net: guarantees tables exist even if `alembic upgrade head` wasn't run,
+# matching this project's "deterministic demo fallback" philosophy.
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="ClaimProof Backend")
 

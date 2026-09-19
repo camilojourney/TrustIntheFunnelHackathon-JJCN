@@ -1,21 +1,18 @@
 import json
 import uuid
-from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import ValidationError
+from sqlalchemy.orm import Session
 
 from app import schemas
+from app.db import get_db
 from app.llm.client import LLMOutputError, get_llm_client
+from app.models import ApplicationModel, CandidateModel, ClaimModel
 from app.services.seed import FIXTURES_DIR, reset_demo_state
 
 router = APIRouter()
-
-# In-memory stores, reset on each process start (or via use_seed).
-_applications: dict[str, dict[str, Any]] = {}
-_claims_by_candidate: dict[str, list[dict[str, Any]]] = {}
-_role_titles: dict[str, str] = {}
 
 _SYSTEM_PROMPT = (
     "You extract structured, testable claims from a candidate's resume text. "
@@ -28,6 +25,19 @@ _SCHEMA_HINT = (
     '"category": "project"|"employment"|"education"|"skill"|"impact", '
     '"statement": str, "importance": "high"|"medium"|"low", "entities": [str]}]}'
 )
+
+
+def _claim_to_schema(row: ClaimModel) -> schemas.Claim:
+    return schemas.Claim(
+        id=row.id,
+        candidate_id=row.candidate_id,
+        source_document=row.source_document,
+        source_excerpt=row.source_excerpt,
+        category=row.category,
+        statement=row.statement,
+        importance=row.importance,
+        entities=row.entities or [],
+    )
 
 
 def _fallback_claims(candidate_id: str, resume_text: str) -> list[dict[str, Any]]:
@@ -51,37 +61,44 @@ def _validate_claims(raw: dict[str, Any]) -> list[schemas.Claim]:
 
 
 @router.post("/api/applications", response_model=schemas.ApplicationCreateResponse)
-def create_application(payload: schemas.ApplicationCreateRequest) -> schemas.ApplicationCreateResponse:
+def create_application(
+    payload: schemas.ApplicationCreateRequest, db: Session = Depends(get_db)
+) -> schemas.ApplicationCreateResponse:
     if payload.use_seed:
-        state = reset_demo_state()
+        state = reset_demo_state(db)
         application_id = state["application_id"]
         candidate_id = state["candidate_id"]
-        _applications[application_id] = {
-            "candidate_id": candidate_id,
-            "resume_text": state["resume_text"],
-        }
-        _role_titles[candidate_id] = state["role_title"]
+        if db.get(ApplicationModel, application_id) is None:
+            db.add(
+                ApplicationModel(
+                    id=application_id, candidate_id=candidate_id, resume_text=state["resume_text"]
+                )
+            )
+        db.commit()
         return schemas.ApplicationCreateResponse(
             candidate_id=candidate_id, application_id=application_id
         )
 
     candidate_id = f"candidate-{uuid.uuid4().hex[:8]}"
     application_id = f"application-{uuid.uuid4().hex[:8]}"
-    _applications[application_id] = {
-        "candidate_id": candidate_id,
-        "resume_text": payload.resume_text or "",
-    }
+    db.add(CandidateModel(candidate_id=candidate_id, role_title=""))
+    db.add(
+        ApplicationModel(
+            id=application_id, candidate_id=candidate_id, resume_text=payload.resume_text or ""
+        )
+    )
+    db.commit()
     return schemas.ApplicationCreateResponse(candidate_id=candidate_id, application_id=application_id)
 
 
 @router.post("/api/applications/{application_id}/extract-claims", response_model=list[schemas.Claim])
-def extract_claims(application_id: str) -> list[schemas.Claim]:
-    application = _applications.get(application_id)
+def extract_claims(application_id: str, db: Session = Depends(get_db)) -> list[schemas.Claim]:
+    application = db.get(ApplicationModel, application_id)
     if application is None:
         raise HTTPException(status_code=404, detail="Application not found")
 
-    candidate_id = application["candidate_id"]
-    resume_text = application["resume_text"]
+    candidate_id = application.candidate_id
+    resume_text = application.resume_text
     fallback_raw = {"claims": _fallback_claims(candidate_id, resume_text)}
 
     llm_client = get_llm_client(fixture=fallback_raw)
@@ -106,25 +123,40 @@ def extract_claims(application_id: str) -> list[schemas.Claim]:
                 status_code=500, detail=f"Fallback claims invalid: {exc}"
             ) from (last_error or exc)
 
-    _claims_by_candidate[candidate_id] = [claim.model_dump() for claim in claims]
+    db.query(ClaimModel).filter(ClaimModel.candidate_id == candidate_id).delete()
+    for claim in claims:
+        db.add(
+            ClaimModel(
+                id=claim.id,
+                candidate_id=claim.candidate_id,
+                source_document=claim.source_document,
+                source_excerpt=claim.source_excerpt,
+                category=claim.category,
+                statement=claim.statement,
+                importance=claim.importance,
+                entities=claim.entities,
+            )
+        )
+    db.commit()
     return claims
 
 
 @router.get("/api/candidates/{candidate_id}/claims", response_model=list[schemas.Claim])
-def get_claims(candidate_id: str) -> list[schemas.Claim]:
-    stored = _claims_by_candidate.get(candidate_id)
-    if not stored:
+def get_claims(candidate_id: str, db: Session = Depends(get_db)) -> list[schemas.Claim]:
+    rows = db.query(ClaimModel).filter(ClaimModel.candidate_id == candidate_id).all()
+    if not rows:
         raise HTTPException(status_code=404, detail="No claims found for candidate")
-    return [schemas.Claim(**item) for item in stored]
+    return [_claim_to_schema(row) for row in rows]
 
 
-def find_claim(candidate_id: str, claim_id: str) -> schemas.Claim | None:
-    for item in _claims_by_candidate.get(candidate_id, []):
-        if item["id"] == claim_id:
-            return schemas.Claim(**item)
-    return None
+def find_claim(candidate_id: str, claim_id: str, db: Session) -> schemas.Claim | None:
+    row = db.get(ClaimModel, claim_id)
+    if row is None or row.candidate_id != candidate_id:
+        return None
+    return _claim_to_schema(row)
 
 
-def find_role_title(candidate_id: str) -> str:
-    return _role_titles.get(candidate_id, "")
+def find_role_title(candidate_id: str, db: Session) -> str:
+    candidate = db.get(CandidateModel, candidate_id)
+    return candidate.role_title if candidate else ""
 

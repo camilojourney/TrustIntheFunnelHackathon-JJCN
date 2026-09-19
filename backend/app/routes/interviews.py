@@ -2,12 +2,15 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any, Literal
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel, ValidationError
+from sqlalchemy.orm import Session
 
 from app import schemas
+from app.db import get_db
 from app.llm.client import LLMOutputError, get_llm_client
 from app.llm.transcription import TranscriptionError, get_transcriber
+from app.models import AnswerModel, InterviewModel, QuestionModel
 from app.routes.applications import find_claim
 from app.services.grounding import build_fallback_grounding, check_grounding
 
@@ -15,8 +18,6 @@ router = APIRouter()
 
 MAX_CLAIMS_PER_INTERVIEW = 3
 
-# In-memory interview sessions.
-_interviews: dict[str, dict[str, Any]] = {}
 
 _OPENING_SYSTEM_PROMPT = (
     "You write one interview question that probes a specific candidate claim. "
@@ -68,6 +69,10 @@ class AudioAnswerResponse(AnswerResponse):
     transcript: str
 
 
+def _question_to_schema(row: QuestionModel) -> schemas.InterviewQuestion:
+    return schemas.InterviewQuestion(
+        id=row.id, claim_id=row.claim_id, text=row.text, kind=row.kind, intent=row.intent
+    )
 
 
 def _fallback_opening_question(claim: schemas.Claim) -> dict[str, Any]:
@@ -106,55 +111,76 @@ def _generate_opening_question(claim: schemas.Claim) -> schemas.InterviewQuestio
 
 
 @router.post("/api/interviews", response_model=InterviewCreateResponse)
-def create_interview(payload: InterviewCreateRequest) -> InterviewCreateResponse:
+def create_interview(
+    payload: InterviewCreateRequest, db: Session = Depends(get_db)
+) -> InterviewCreateResponse:
     claim_ids = payload.claim_ids[:MAX_CLAIMS_PER_INTERVIEW]
     if not claim_ids:
         raise HTTPException(status_code=400, detail="At least one claim_id is required")
 
     for claim_id in claim_ids:
-        if find_claim(payload.candidate_id, claim_id) is None:
+        if find_claim(payload.candidate_id, claim_id, db) is None:
             raise HTTPException(
                 status_code=404, detail=f"Claim {claim_id} not found for candidate"
             )
 
     interview_id = f"interview-{uuid.uuid4().hex[:8]}"
-    _interviews[interview_id] = {
-        "candidate_id": payload.candidate_id,
-        "claim_ids": claim_ids,
-        "current_index": 0,
-        # keyed by claim_id -> {"opening": InterviewQuestion dict, "follow_up": InterviewQuestion dict | None}
-        "questions": {},
-        "answers": [],
-    }
+    db.add(
+        InterviewModel(
+            id=interview_id,
+            candidate_id=payload.candidate_id,
+            claim_ids=claim_ids,
+            current_index=0,
+        )
+    )
+    db.commit()
     return InterviewCreateResponse(interview_id=interview_id)
 
 
 @router.get("/api/interviews/{interview_id}/next-question", response_model=NextQuestionResponse)
-def next_question(interview_id: str) -> NextQuestionResponse:
-    interview = _interviews.get(interview_id)
+def next_question(interview_id: str, db: Session = Depends(get_db)) -> NextQuestionResponse:
+    interview = db.get(InterviewModel, interview_id)
     if interview is None:
         raise HTTPException(status_code=404, detail="Interview not found")
 
-    idx = interview["current_index"]
-    claim_ids = interview["claim_ids"]
+    idx = interview.current_index
+    claim_ids = interview.claim_ids
     if idx >= len(claim_ids):
         return NextQuestionResponse(completed=True, question=None)
 
     claim_id = claim_ids[idx]
-    claim = find_claim(interview["candidate_id"], claim_id)
+    claim = find_claim(interview.candidate_id, claim_id, db)
     if claim is None:
         raise HTTPException(status_code=404, detail=f"Claim {claim_id} not found")
 
-    claim_questions = interview["questions"].setdefault(claim_id, {})
-    if claim_questions.get("opening") is None:
+    follow_up_row = (
+        db.query(QuestionModel)
+        .filter_by(interview_id=interview_id, claim_id=claim_id, kind="follow_up")
+        .first()
+    )
+    if follow_up_row is not None:
+        return NextQuestionResponse(completed=False, question=_question_to_schema(follow_up_row))
+
+    opening_row = (
+        db.query(QuestionModel)
+        .filter_by(interview_id=interview_id, claim_id=claim_id, kind="opening")
+        .first()
+    )
+    if opening_row is None:
         opening = _generate_opening_question(claim)
         assert opening.claim_id == claim_id
-        claim_questions["opening"] = opening.model_dump()
+        opening_row = QuestionModel(
+            id=opening.id,
+            interview_id=interview_id,
+            claim_id=claim_id,
+            kind="opening",
+            text=opening.text,
+            intent=opening.intent,
+        )
+        db.add(opening_row)
+        db.commit()
 
-    # If Prompt 6's answer flow already generated a follow-up for this claim, surface that next.
-    next_raw = claim_questions.get("follow_up") or claim_questions["opening"]
-    question = schemas.InterviewQuestion(**next_raw)
-    return NextQuestionResponse(completed=False, question=question)
+    return NextQuestionResponse(completed=False, question=_question_to_schema(opening_row))
 
 
 def _fallback_follow_up_decision(claim: schemas.Claim, transcript: str) -> dict[str, Any]:
@@ -183,7 +209,7 @@ def _fallback_follow_up_decision(claim: schemas.Claim, transcript: str) -> dict[
 
 
 def _decide_follow_up(
-    claim: schemas.Claim, opening_question: dict[str, Any], transcript: str
+    claim: schemas.Claim, opening_question: schemas.InterviewQuestion, transcript: str
 ) -> tuple[bool, schemas.InterviewQuestion | None]:
     fallback = _fallback_follow_up_decision(claim, transcript)
     llm_client = get_llm_client(fixture=fallback)
@@ -191,7 +217,7 @@ def _decide_follow_up(
         f"Claim statement: {claim.statement}\n"
         f"Claim category: {claim.category}\n"
         f"Claim entities: {', '.join(claim.entities)}\n"
-        f"Opening question: {opening_question['text']}\n"
+        f"Opening question: {opening_question.text}\n"
         f"Candidate transcript: {transcript}\n"
         f"claim_id: {claim.id}"
     )
@@ -222,18 +248,11 @@ def _decide_follow_up(
     return False, None
 
 
-def _find_question_location(interview: dict[str, Any], question_id: str) -> tuple[str, str] | None:
-    for claim_id, claim_questions in interview["questions"].items():
-        for kind in ("opening", "follow_up"):
-            question = claim_questions.get(kind)
-            if question is not None and question["id"] == question_id:
-                return claim_id, kind
-    return None
-
-
 @router.post("/api/interviews/{interview_id}/answers", response_model=AnswerResponse)
-def submit_answer(interview_id: str, payload: AnswerRequest) -> AnswerResponse:
-    return record_answer(interview_id, payload.question_id, payload.transcript)
+def submit_answer(
+    interview_id: str, payload: AnswerRequest, db: Session = Depends(get_db)
+) -> AnswerResponse:
+    return record_answer(interview_id, payload.question_id, payload.transcript, db)
 
 
 @router.post("/api/interviews/{interview_id}/answers/audio", response_model=AudioAnswerResponse)
@@ -241,8 +260,9 @@ def submit_audio_answer(
     interview_id: str,
     question_id: str = Form(...),
     audio: UploadFile = File(...),
+    db: Session = Depends(get_db),
 ) -> AudioAnswerResponse:
-    if interview_id not in _interviews:
+    if db.get(InterviewModel, interview_id) is None:
         raise HTTPException(status_code=404, detail="Interview not found")
 
     audio_bytes = audio.file.read()
@@ -257,7 +277,7 @@ def submit_audio_answer(
     except TranscriptionError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
-    result = record_answer(interview_id, question_id, transcript)
+    result = record_answer(interview_id, question_id, transcript, db)
     return AudioAnswerResponse(
         next_action=result.next_action,
         question=result.question,
@@ -274,33 +294,37 @@ def _run_grounding(
     return check_grounding(claim, question, transcript, llm_client)
 
 
-def record_answer(interview_id: str, question_id: str, transcript: str) -> AnswerResponse:
-    interview = _interviews.get(interview_id)
+def record_answer(
+    interview_id: str, question_id: str, transcript: str, db: Session
+) -> AnswerResponse:
+    interview = db.get(InterviewModel, interview_id)
     if interview is None:
         raise HTTPException(status_code=404, detail="Interview not found")
 
-    located = _find_question_location(interview, question_id)
-    if located is None:
+    question_row = db.get(QuestionModel, question_id)
+    if question_row is None or question_row.interview_id != interview_id:
         raise HTTPException(status_code=404, detail="Question not found in this interview")
-    claim_id, kind = located
+    claim_id, kind = question_row.claim_id, question_row.kind
 
-    claim = find_claim(interview["candidate_id"], claim_id)
+    claim = find_claim(interview.candidate_id, claim_id, db)
     if claim is None:
         raise HTTPException(status_code=404, detail=f"Claim {claim_id} not found")
 
-    claim_questions = interview["questions"][claim_id]
-    current_question = schemas.InterviewQuestion(**claim_questions[kind])
+    current_question = _question_to_schema(question_row)
     grounding = _run_grounding(claim, current_question, transcript)
 
-    answer = schemas.InterviewAnswer(
-        id=f"answer-{uuid.uuid4().hex[:8]}",
-        question_id=question_id,
-        transcript=transcript,
-        created_at=datetime.now(timezone.utc).isoformat(),
+    db.add(
+        AnswerModel(
+            id=f"answer-{uuid.uuid4().hex[:8]}",
+            question_id=question_id,
+            interview_id=interview_id,
+            transcript=transcript,
+            audio_url=None,
+            created_at=datetime.now(timezone.utc).isoformat(),
+            grounding=grounding.model_dump(),
+        )
     )
-    answer_record = answer.model_dump()
-    answer_record["grounding"] = grounding.model_dump()
-    interview["answers"].append(answer_record)
+    db.commit()
 
     if not grounding.on_topic:
         # Content doesn't address the claim/question — reprompt rather than fabricating a follow-up.
@@ -310,25 +334,34 @@ def record_answer(interview_id: str, question_id: str, transcript: str) -> Answe
 
     if kind == "follow_up":
         # A claim gets at most one opening + at most one follow-up, never more.
-        interview["current_index"] += 1
+        interview.current_index += 1
+        db.commit()
         return _advance_response(interview)
 
     # kind == "opening": decide whether a single follow-up is warranted.
-    needs_follow_up, follow_up_question = _decide_follow_up(
-        claim, claim_questions["opening"], transcript
-    )
+    needs_follow_up, follow_up_question = _decide_follow_up(claim, current_question, transcript)
 
     if needs_follow_up and follow_up_question is not None:
-        claim_questions["follow_up"] = follow_up_question.model_dump()
+        db.add(
+            QuestionModel(
+                id=follow_up_question.id,
+                interview_id=interview_id,
+                claim_id=claim_id,
+                kind="follow_up",
+                text=follow_up_question.text,
+                intent=follow_up_question.intent,
+            )
+        )
+        db.commit()
         return AnswerResponse(next_action="follow_up", question=follow_up_question)
 
-    interview["current_index"] += 1
+    interview.current_index += 1
+    db.commit()
     return _advance_response(interview)
 
 
-
-def _advance_response(interview: dict[str, Any]) -> AnswerResponse:
-    idx = interview["current_index"]
-    if idx >= len(interview["claim_ids"]):
+def _advance_response(interview: InterviewModel) -> AnswerResponse:
+    idx = interview.current_index
+    if idx >= len(interview.claim_ids):
         return AnswerResponse(next_action="completed", question=None)
     return AnswerResponse(next_action="next_claim", question=None)

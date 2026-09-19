@@ -1,18 +1,17 @@
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import ValidationError
+from sqlalchemy.orm import Session
 
 from app import schemas
+from app.db import get_db
 from app.llm.client import LLMOutputError, get_llm_client
+from app.models import AnswerModel, AssessmentModel, InterviewModel, QuestionModel
 from app.routes.applications import find_claim, find_role_title
 from app.routes.evidence import get_evidence_for_claim
-from app.routes.interviews import _interviews
 
 router = APIRouter()
-
-# In-memory store of completed reports, keyed by candidate_id.
-_reports: dict[str, dict[str, Any]] = {}
 
 _ASSESSMENT_SYSTEM_PROMPT = (
     "You assess whether a candidate demonstrated a claim during an interview, based only "
@@ -27,21 +26,35 @@ _ASSESSMENT_SCHEMA_HINT = (
 
 
 def _questions_and_answers_for_claim(
-    interview: dict[str, Any], claim_id: str
+    interview_id: str, claim_id: str, db: Session
 ) -> tuple[list[schemas.InterviewQuestion], list[schemas.InterviewAnswer]]:
-    claim_questions = interview["questions"].get(claim_id, {})
-    questions: list[schemas.InterviewQuestion] = []
-    question_ids: set[str] = set()
-    for kind in ("opening", "follow_up"):
-        raw = claim_questions.get(kind)
-        if raw is not None:
-            questions.append(schemas.InterviewQuestion(**raw))
-            question_ids.add(raw["id"])
+    question_rows = (
+        db.query(QuestionModel)
+        .filter_by(interview_id=interview_id, claim_id=claim_id)
+        .all()
+    )
+    questions = [
+        schemas.InterviewQuestion(id=q.id, claim_id=q.claim_id, text=q.text, kind=q.kind, intent=q.intent)
+        for q in question_rows
+    ]
+    question_ids = {q.id for q in question_rows}
 
+    answer_rows = (
+        db.query(AnswerModel)
+        .filter(AnswerModel.interview_id == interview_id, AnswerModel.question_id.in_(question_ids))
+        .all()
+        if question_ids
+        else []
+    )
     answers = [
-        schemas.InterviewAnswer(**{k: v for k, v in a.items() if k != "grounding"})
-        for a in interview["answers"]
-        if a["question_id"] in question_ids
+        schemas.InterviewAnswer(
+            id=a.id,
+            question_id=a.question_id,
+            transcript=a.transcript,
+            audio_url=a.audio_url,
+            created_at=a.created_at,
+        )
+        for a in answer_rows
     ]
     return questions, answers
 
@@ -156,12 +169,12 @@ def _assess_claim(
 
 
 @router.post("/api/interviews/{interview_id}/complete", response_model=schemas.CandidateReport)
-def complete_interview(interview_id: str) -> schemas.CandidateReport:
-    interview = _interviews.get(interview_id)
+def complete_interview(interview_id: str, db: Session = Depends(get_db)) -> schemas.CandidateReport:
+    interview = db.get(InterviewModel, interview_id)
     if interview is None:
         raise HTTPException(status_code=404, detail="Interview not found")
 
-    candidate_id = interview["candidate_id"]
+    candidate_id = interview.candidate_id
 
     all_claims: list[schemas.Claim] = []
     all_questions: list[schemas.InterviewQuestion] = []
@@ -169,24 +182,41 @@ def complete_interview(interview_id: str) -> schemas.CandidateReport:
     all_evidence: list[schemas.EvidenceItem] = []
     assessments: list[schemas.ClaimAssessment] = []
 
-    for claim_id in interview["claim_ids"]:
-        claim = find_claim(candidate_id, claim_id)
+    db.query(AssessmentModel).filter(
+        AssessmentModel.interview_id == interview_id
+    ).delete()
+
+    for claim_id in interview.claim_ids:
+        claim = find_claim(candidate_id, claim_id, db)
         if claim is None:
             continue
 
-        questions, answers = _questions_and_answers_for_claim(interview, claim_id)
-        evidence = get_evidence_for_claim(claim_id)
+        questions, answers = _questions_and_answers_for_claim(interview_id, claim_id, db)
+        evidence = get_evidence_for_claim(claim_id, db)
 
         all_claims.append(claim)
         all_questions.extend(questions)
         all_answers.extend(answers)
         all_evidence.extend(evidence)
 
-        assessments.append(_assess_claim(claim, questions, answers, evidence))
+        assessment = _assess_claim(claim, questions, answers, evidence)
+        assessments.append(assessment)
+        db.add(
+            AssessmentModel(
+                claim_id=assessment.claim_id,
+                interview_id=interview_id,
+                status=assessment.status,
+                rationale=assessment.rationale,
+                evidence_ids=assessment.evidence_ids,
+                unresolved_questions=assessment.unresolved_questions,
+            )
+        )
 
-    role_title = find_role_title(candidate_id)
+    db.commit()
 
-    report = schemas.CandidateReport(
+    role_title = find_role_title(candidate_id, db)
+
+    return schemas.CandidateReport(
         candidate_id=candidate_id,
         role_title=role_title,
         claims=all_claims,
@@ -195,13 +225,56 @@ def complete_interview(interview_id: str) -> schemas.CandidateReport:
         evidence=all_evidence,
         assessments=assessments,
     )
-    _reports[candidate_id] = report.model_dump()
-    return report
 
 
 @router.get("/api/candidates/{candidate_id}/report", response_model=schemas.CandidateReport)
-def get_report(candidate_id: str) -> schemas.CandidateReport:
-    stored = _reports.get(candidate_id)
-    if stored is None:
+def get_report(candidate_id: str, db: Session = Depends(get_db)) -> schemas.CandidateReport:
+    assessment_rows = (
+        db.query(AssessmentModel)
+        .join(InterviewModel, AssessmentModel.interview_id == InterviewModel.id)
+        .filter(InterviewModel.candidate_id == candidate_id)
+        .all()
+    )
+    if not assessment_rows:
         raise HTTPException(status_code=404, detail="No report found for candidate")
-    return schemas.CandidateReport(**stored)
+
+    all_claims: list[schemas.Claim] = []
+    all_questions: list[schemas.InterviewQuestion] = []
+    all_answers: list[schemas.InterviewAnswer] = []
+    all_evidence: list[schemas.EvidenceItem] = []
+    assessments: list[schemas.ClaimAssessment] = []
+
+    for row in assessment_rows:
+        claim = find_claim(candidate_id, row.claim_id, db)
+        if claim is None:
+            continue
+
+        questions, answers = _questions_and_answers_for_claim(row.interview_id, row.claim_id, db)
+        evidence = get_evidence_for_claim(row.claim_id, db)
+
+        all_claims.append(claim)
+        all_questions.extend(questions)
+        all_answers.extend(answers)
+        all_evidence.extend(evidence)
+        assessments.append(
+            schemas.ClaimAssessment(
+                claim_id=row.claim_id,
+                status=row.status,
+                rationale=row.rationale,
+                evidence_ids=row.evidence_ids or [],
+                unresolved_questions=row.unresolved_questions or [],
+            )
+        )
+
+    role_title = find_role_title(candidate_id, db)
+
+    return schemas.CandidateReport(
+        candidate_id=candidate_id,
+        role_title=role_title,
+        claims=all_claims,
+        questions=all_questions,
+        answers=all_answers,
+        evidence=all_evidence,
+        assessments=assessments,
+    )
+
