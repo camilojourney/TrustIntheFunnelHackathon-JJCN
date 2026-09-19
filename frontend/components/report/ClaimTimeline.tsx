@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import type { ClaimView } from "@/lib/join";
 import { StatusBadge } from "./StatusBadge";
 
@@ -28,16 +28,32 @@ function Step({
 // Drawer: claim → question → answer → evidence → assessment, with ids so a
 // recruiter can trace every conclusion to its source.
 export function ClaimTimeline({ view, onClose }: { view: ClaimView; onClose: () => void }) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
+  // Move focus into the drawer and lock the page behind it while it is open.
+  useEffect(() => {
+    closeRef.current?.focus();
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, []);
+
   const { claim, exchanges, evidence, assessment } = view;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true">
+    <div
+      className="fixed inset-0 z-50 flex justify-end print:hidden"
+      role="dialog"
+      aria-modal="true"
+    >
       <button
         type="button"
         aria-label="Close timeline"
@@ -51,6 +67,7 @@ export function ClaimTimeline({ view, onClose }: { view: ClaimView; onClose: () 
             <h2 className="mt-1 text-lg font-semibold text-slate-900">{claim.statement}</h2>
           </div>
           <button
+            ref={closeRef}
             type="button"
             onClick={onClose}
             className="rounded border border-slate-300 px-2 py-1 text-sm text-slate-600 hover:bg-slate-50"
