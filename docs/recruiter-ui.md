@@ -27,19 +27,20 @@ The page calls `GET {API_BASE}/api/candidates/{id}/report`. On any error, a time
 - `/recruiter` — queue with one demo candidate and status counts.
 - `/recruiter/demo` — the report: summary counts, status filters, one card per claim.
 - Each card: source excerpt, questions, answer excerpts, rationale, external evidence, interview evidence, limitations, unresolved questions.
-- "Open evidence timeline" drawer: claim → question → answer → evidence → assessment, with ids. Esc closes it. Focus moves to Close on open and returns to the card button on close. The page behind it does not scroll.
+- "Evidence timeline" button in each card header opens the drawer: claim → question → answer → evidence → assessment, with ids. Esc closes it. Focus moves to Close on open and returns to the header button on close. The page behind it does not scroll.
 - "Decision support, not a hiring decision" banner on both pages.
-- Cards collapse by default: header, source excerpt, rationale, and a counts line. "Show evidence" opens one card, "Expand all" opens every card. Two claims fit on one screen for the compare moment.
-- "Print report" button: print or save as PDF. Print CSS hides the filters, buttons, drawer, and back link, expands every card, and keeps a card on one page.
+- Cards collapse by default: header, source excerpt, rationale, and a counts line. "Details ▾" opens one card, "Expand all" opens every card. Two claims fit on one screen for the compare moment.
+- "Print" and "PDF" buttons in the header control column. PDF names the file through `document.title`, then restores the title. Print CSS hides the filters, buttons, drawer, and back link, expands every card, and keeps a card on one page.
+- Status definitions sit behind a round "i" next to each summary label and each card badge. Hover, focus, or click opens it; Esc or a click outside closes it. Print shows the three definitions as text under the summary tiles.
 - `loading.tsx` skeleton on the report route.
 - An API 404 for an unknown id falls back to the fixture and keeps the "Demo mode: fixture data" badge. Verified against a stub API that answers 404.
 
 ## Demo tips
 
 1. Open `/recruiter/demo`. All cards start collapsed.
-2. Press "Show evidence" on claim A (demonstrated) and claim C (unresolved). Both fit on one screen, side by side down the page.
-3. Press "Open evidence timeline" on claim C to walk claim → question → answer → evidence → assessment. Esc closes it.
-4. "Print report" for the PDF. Every card prints expanded, limitations included.
+2. Press "Details ▾" on claim A (demonstrated) and claim C (unresolved). Both fit on one screen, side by side down the page.
+3. Press "Evidence timeline" on claim C to walk claim → question → answer → evidence → assessment. Esc closes it.
+4. "PDF" for a named print-to-PDF, or "Print" for paper. Every card prints expanded, limitations included.
 
 ## Not done
 

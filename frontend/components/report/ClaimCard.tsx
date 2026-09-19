@@ -59,7 +59,16 @@ export function ClaimCard({
           </div>
           <h3 className="mt-1 text-lg font-semibold text-slate-900">{claim.statement}</h3>
         </div>
-        <StatusBadge status={assessment.status} />
+        <div className="flex shrink-0 items-center gap-2">
+          <StatusBadge status={assessment.status} withInfo />
+          <button
+            type="button"
+            onClick={(e) => onOpenTimeline(e.currentTarget)}
+            className="rounded-full bg-slate-900 px-3 py-1.5 text-sm text-white transition hover:bg-slate-700 print:hidden"
+          >
+            Evidence timeline
+          </button>
+        </div>
       </header>
 
       <div className="mt-3 grid gap-3">
@@ -139,22 +148,15 @@ export function ClaimCard({
         </div>
       </div>
 
-      <footer className="mt-3 flex flex-wrap items-center gap-4 border-t border-slate-100 pt-3 print:hidden">
+      <footer className="mt-3 border-t border-slate-100 pt-2 print:hidden">
         <button
           type="button"
           onClick={onToggle}
           aria-expanded={expanded}
           aria-controls={bodyId}
-          className="text-sm font-medium text-sky-700 hover:text-sky-900"
+          className="text-sm text-slate-500 transition hover:text-slate-800"
         >
-          {expanded ? "Hide evidence" : "Show evidence"}
-        </button>
-        <button
-          type="button"
-          onClick={(e) => onOpenTimeline(e.currentTarget)}
-          className="text-sm font-medium text-sky-700 hover:text-sky-900"
-        >
-          Open evidence timeline →
+          {expanded ? "Hide details ▴" : "Details ▾"}
         </button>
       </footer>
     </article>
