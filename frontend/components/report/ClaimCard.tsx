@@ -104,8 +104,14 @@ export function ClaimCard({
             <button
               type="button"
               onClick={(e) => onOpenTimeline(e.currentTarget)}
-              className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 transition hover:border-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-slate-500 print:hidden"
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-400 bg-slate-100 px-3.5 py-1.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:border-slate-600 hover:bg-slate-200 dark:border-slate-500 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700 print:hidden"
             >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" aria-hidden="true">
+                <path d="M7 2v10" />
+                <circle cx="7" cy="2" r="1.5" fill="currentColor" />
+                <circle cx="7" cy="7" r="1.5" fill="currentColor" />
+                <circle cx="7" cy="12" r="1.5" fill="currentColor" />
+              </svg>
               Evidence timeline
             </button>
           )}
@@ -226,7 +232,7 @@ export function ClaimCard({
           <button
             type="button"
             onClick={(e) => onOpenDetails(e.currentTarget)}
-            className="text-sm text-slate-500 transition hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+            className="text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
           >
             Details
           </button>

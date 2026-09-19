@@ -158,6 +158,11 @@ it falls back to the `demo` report.
 
 ## Demo tips
 
+Round 10: Evidence timeline uses a lightly filled, semibold pill and a 14 px
+timeline icon in both themes. It has more weight than Print / PDF without a
+solid dark fill. Details remains its quiet partner. Placement, click behavior,
+focus return, and the button-free print view are unchanged.
+
 1. Open `/recruiter/demo`. Every card is one height, so two fit on one screen.
 2. Press "Details" on claim A (demonstrated), then on claim C (unresolved). Each opens a centered modal with the whole transcript. Esc closes it.
 3. Press "Evidence timeline" on claim C to walk claim → question → answer → evidence → assessment. Esc closes it.
