@@ -38,7 +38,7 @@ function Step({
 
 const LIST = "mt-5 space-y-5 border-l border-slate-200 pl-0 [&>li]:-ml-[5px]";
 
-// en-US gives "11:02 AM" with a narrow no-break space. Jacob reads "11:02 am".
+// en-US gives "11:02 AM" with a narrow no-break space. This page shows "11:02 am".
 function clock(text: string) {
   return text.replace(/[  ]/g, " ").replace(/ (AM|PM)/g, (_, p: string) => ` ${p.toLowerCase()}`);
 }

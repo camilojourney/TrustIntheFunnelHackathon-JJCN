@@ -3,6 +3,7 @@ import { DecisionSupportBanner } from "@/components/report/DecisionSupportBanner
 import { PrintButton } from "@/components/report/PrintButton";
 import { ReportView } from "@/components/report/ReportView";
 import { SourceToggle } from "@/components/report/SourceToggle";
+import { candidateName } from "@/lib/candidates";
 import { getReport, wantedSource } from "@/lib/report";
 
 export const dynamic = "force-dynamic";
@@ -25,9 +26,11 @@ export default async function RecruiterReport({
         </Link>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="text-2xl font-semibold text-slate-900">Claim evidence report</h1>
+            <h1 className="text-2xl font-semibold text-slate-900">
+              {candidateName(report.candidate_id)}
+            </h1>
             <p className="text-sm text-slate-600">
-              Candidate <span className="font-mono">{report.candidate_id}</span> · {report.role_title}
+              Claim evidence report · {report.role_title}
             </p>
           </div>
           {/* One row: Demo | Live, then Print and PDF. It never wraps in itself. */}

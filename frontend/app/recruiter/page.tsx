@@ -1,17 +1,15 @@
 import Link from "next/link";
 import { DecisionSupportBanner } from "@/components/report/DecisionSupportBanner";
+import { CANDIDATES } from "@/lib/candidates";
 import { buildClaimViews } from "@/lib/join";
 import { getReport } from "@/lib/report";
 import { STATUSES, STATUS_META } from "@/lib/status";
 
 export const dynamic = "force-dynamic";
 
-// One demo candidate. Add ids here when the backend lists more.
-const QUEUE = [{ id: "demo", name: "Demo candidate" }];
-
 export default async function RecruiterQueue() {
   const rows = await Promise.all(
-    QUEUE.map(async (c) => {
+    CANDIDATES.map(async (c) => {
       const { report, source } = await getReport(c.id);
       const views = buildClaimViews(report);
       return { ...c, report, source, views };

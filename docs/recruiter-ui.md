@@ -24,8 +24,8 @@ The page calls `GET {API_BASE}/api/candidates/{id}/report`. On any error, a time
 
 ## What works
 
-- `/recruiter` — queue with one demo candidate and status counts.
-- `/recruiter/demo` — the report: summary counts, status filters, one card per claim.
+- `/recruiter` — queue with four candidates and status counts.
+- `/recruiter/{id}` — the report: summary counts, status filters, one card per claim. The header shows the candidate's name, then the role.
 - Each card: source excerpt, questions, answer excerpts, rationale, external evidence, interview evidence, limitations, unresolved questions.
 - "Evidence timeline" button in each card header opens the drawer. The drawer has 3 tabs — **Questions** (the claim, then each question and answer, with one line for when the answers were recorded), **Evidence**, **Assessment** (the assessment pill always carries the status color). Left and Right arrows move between the tabs. Record ids are not shown as text: they are in `data-record-id` and the hover `title`, and show as text in the print view only. Esc closes it. Focus moves to Close on open and returns to the header button on close. The page behind it does not scroll.
 - "Decision support, not a hiring decision" banner on both pages.
@@ -39,6 +39,33 @@ The page calls `GET {API_BASE}/api/candidates/{id}/report`. On any error, a time
 - `loading.tsx` skeleton on the report route.
 - An API 404 for an unknown id falls back to the fixture and keeps the toggle on **Demo**. Verified against a stub API that answers 404.
 
+## Candidates
+
+All four candidates are invented seeded scenarios written for the demo. No
+name, employer, project, repository, or number below belongs to a real person.
+The report contract has no name field, so the name lives in
+`frontend/lib/candidates.ts` and nowhere else.
+
+| id | name | role | data file |
+|---|---|---|---|
+| `demo` | Alex Rivera | Machine Learning Engineer | `fixtures/report.json` (repo root, canonical) |
+| `maya-okafor` | Maya Okafor | Data Engineer | `frontend/fixtures/maya-okafor.json` |
+| `daniel-reyes` | Daniel Reyes | Frontend Engineer | `frontend/fixtures/daniel-reyes.json` |
+| `sofia-lindqvist` | Sofia Lindqvist | Site Reliability Engineer | `frontend/fixtures/sofia-lindqvist.json` |
+
+The four have different status mixes on purpose, so the queue dots differ.
+
+### Add a fifth candidate
+
+1. Write `frontend/fixtures/<id>.json` to the `CandidateReport` shape in
+   `shared/contracts.ts`. Every evidence item needs a non-empty `limitations`.
+2. Add one row to `CANDIDATES` in `frontend/lib/candidates.ts`.
+3. Add one line to `SEEDED` in `frontend/lib/report.ts`.
+
+`SEEDED` is typed `Record<string, CandidateReport>`, so `npm run build` fails on
+a file whose shape does not match. An id that is in neither list still renders:
+it falls back to the `demo` report.
+
 ## Demo tips
 
 1. Open `/recruiter/demo`. All cards start collapsed.
@@ -48,14 +75,19 @@ The page calls `GET {API_BASE}/api/candidates/{id}/report`. On any error, a time
 
 ## Not done
 
-- More than one candidate. Add ids to `QUEUE` in `frontend/app/recruiter/page.tsx`.
+- Live API data for the three new ids. They are seeded files only; `source=live`
+  still calls the API and falls back to the seeded file for that id.
+- The static demo PDF. `frontend/public/demo-report.pdf` does not exist, so all
+  four ids use the `/recruiter/{id}/print` route.
 - Link to Person 4's trace view.
 
 ## Files
 
 - `shared/contracts.ts` — types copied verbatim from PLAN.md section 6.
-- `fixtures/report.json` — ML Engineer scenario, claims A/B/C. Person 4 owns it from here.
-- `frontend/lib/report.ts` — API fetch with fixture fallback. `getReport(id, want)` takes the toggle value.
+- `fixtures/report.json` — ML Engineer scenario for id `demo`, claims A/B/C. Person 4 owns it from here.
+- `frontend/fixtures/*.json` — the three other seeded candidates. This folder is the recruiter UI's own; the repo-root `fixtures/` is not.
+- `frontend/lib/candidates.ts` — the queue list `{ id, name }[]` and `candidateName(id)`.
+- `frontend/lib/report.ts` — API fetch with fixture fallback, plus the `SEEDED` id-to-report map. `getReport(id, want)` takes the toggle value.
 - `frontend/lib/join.ts` — joins the flat report into one view per claim. A claim with no assessment shows as unresolved.
 - `frontend/components/report/` — all report components. `ClaimCard.tsx` and `ReportView.tsx` are client components; `ReportView` owns which cards are open.
 - `frontend/app/globals.css` — the `@media print` block. Per-element print rules use Tailwind `print:` variants.
