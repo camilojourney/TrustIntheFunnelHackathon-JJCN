@@ -27,12 +27,22 @@ The page calls `GET {API_BASE}/api/candidates/{id}/report`. On any error, a time
 - `/recruiter` — queue with one demo candidate and status counts.
 - `/recruiter/demo` — the report: summary counts, status filters, one card per claim.
 - Each card: source excerpt, questions, answer excerpts, rationale, external evidence, interview evidence, limitations, unresolved questions.
-- "Open evidence timeline" drawer: claim → question → answer → evidence → assessment, with ids. Esc closes it.
+- "Open evidence timeline" drawer: claim → question → answer → evidence → assessment, with ids. Esc closes it. Focus moves to Close on open and returns to the card button on close. The page behind it does not scroll.
 - "Decision support, not a hiring decision" banner on both pages.
+- Cards collapse by default: header, source excerpt, rationale, and a counts line. "Show evidence" opens one card, "Expand all" opens every card. Two claims fit on one screen for the compare moment.
+- "Print report" button: print or save as PDF. Print CSS hides the filters, buttons, drawer, and back link, expands every card, and keeps a card on one page.
+- `loading.tsx` skeleton on the report route.
+- An API 404 for an unknown id falls back to the fixture and keeps the "Demo mode: fixture data" badge. Verified against a stub API that answers 404.
+
+## Demo tips
+
+1. Open `/recruiter/demo`. All cards start collapsed.
+2. Press "Show evidence" on claim A (demonstrated) and claim C (unresolved). Both fit on one screen, side by side down the page.
+3. Press "Open evidence timeline" on claim C to walk claim → question → answer → evidence → assessment. Esc closes it.
+4. "Print report" for the PDF. Every card prints expanded, limitations included.
 
 ## Not done
 
-- Export or print button.
 - More than one candidate. Add ids to `QUEUE` in `frontend/app/recruiter/page.tsx`.
 - Link to Person 4's trace view.
 
@@ -42,7 +52,8 @@ The page calls `GET {API_BASE}/api/candidates/{id}/report`. On any error, a time
 - `fixtures/report.json` — ML Engineer scenario, claims A/B/C. Person 4 owns it from here.
 - `frontend/lib/report.ts` — API fetch with fixture fallback.
 - `frontend/lib/join.ts` — joins the flat report into one view per claim. A claim with no assessment shows as unresolved.
-- `frontend/components/report/` — all report components.
+- `frontend/components/report/` — all report components. `ClaimCard.tsx` and `ReportView.tsx` are client components; `ReportView` owns which cards are open.
+- `frontend/app/globals.css` — the `@media print` block. Per-element print rules use Tailwind `print:` variants.
 - `frontend/next.config.ts` — sets `turbopack.root` to the repo root so `shared/` and `fixtures/` resolve. Keep it.
 
 ## Rules the UI keeps
